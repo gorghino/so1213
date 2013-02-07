@@ -2,19 +2,18 @@
 #include <types13.h>
 
 pcb_t pcb_table[MAXPROC];
-pcb_t pcb_free[];
+pcb_t pcb_free[MAXPROC];
 pcb_t *pcbfree_h;
 
 /* PCB free list handling functions */
+
+
+/*Inizializza la pcbFree in modo da contenere tutti gli elementi della pcb_table.*/
 void initPcbs(void){
-
-	pcb_t *pcb_table_p = pcb_table; /*Sono necessari i puntatori a pcb_table/free anche se sono globali?*/
-	pcb_t *pcb_free_p = pcb_free;
-
-	initPcbs_rec(pcb_table_p, pcb_free_p, 0);
+	initPcbs_rec(0);
 }
 	
-void initPcbs_rec(pcb_t *pcb_table_p, pcb_t *pcb_free_p, int count){
+void initPcbs_rec(int count){
 	if (count>MAXPROC)
 		return;
 
@@ -23,18 +22,20 @@ void initPcbs_rec(pcb_t *pcb_table_p, pcb_t *pcb_free_p, int count){
 	if (count==0)
 		pcbfree_h = pcb_free[0];
 
-	initPcbs_rec(pcb_table_p, pcb_free_p, count++);
+	initPcbs_rec(count++);
 }
-		
+
+/*Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree)*/	
 void freePcb(pcb_t *p){
-	pcb_t *pcbfree_p = pcb_free_h;
+
+	pcb_t *pcbfree_p = pcb_free_h; /*Inizialmente pcbfree_p punta al primo PCB in pcbFree*/
 	freePcb_rec(p, pcbfree_p); 
 }
 
 void freePcb_rec(pcb_t *p, pcb_t *pcbfree_p){
 
 	if(pcbfree_p->p_next == NULL){
-		pcbfree_p->p_next = p;
+		pcbfree_p->p_next = p; /*Faccio puntare p dal primo PCB senza next*/
 		return;
 	}
 	else {
@@ -43,10 +44,10 @@ void freePcb_rec(pcb_t *p, pcb_t *pcbfree_p){
 	}
 } 
 
-pcb_t *allocPcb(void){
 
 /*Restituisce NULL se la pcbFree e’ vuota. Altrimenti rimuove un elemento dalla pcbFree, inizializza tutti i 
 campi (NULL/0) e restituisce l’elemento rimosso.*/
+pcb_t *allocPcb(void){
 
 	if(pcb_free_h == NULL)
 		return NULL;
