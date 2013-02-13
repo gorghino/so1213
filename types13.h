@@ -1,7 +1,7 @@
 #ifndef _TYPES13_H
 #define _TYPES13_H
 
-#include <uMPStypes.h>
+#include "uMPStypes.h"
 
 /* Process Control Block (PCB) data structure*/
 typedef struct pcb_t {
@@ -28,8 +28,8 @@ typedef struct pcb_t {
 typedef struct semd_t {
 	struct semd_t* s_next;
 
-	/* Semaphore value*/
-	int s_key;
+	/* Semaphore key*/
+	int *s_key;
 
 	/* Queue of PCBs blocked on the semaphore*/
 	pcb_t *s_procQ;
