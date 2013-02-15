@@ -18,7 +18,7 @@ void initPcbs_rec(int count){
 	if (count>MAXPROC)
 		return;
 
-	insertList(pcbfree_h, &pcb_table[count]);
+	insertPCBList(pcbfree_h, &pcb_table[count]);
 	
 	initPcbs_rec(count++);
 }
@@ -94,7 +94,7 @@ pcb_t* removeProcQ( pcb_t** head){
 	if (!head)
 		return NULL;
 	else{
-		pcb_t * temp = (*head);
+		pcb_t *temp = (*head);
 		(*head) = (*head)->p_next;
 		return temp;
 		}
@@ -115,22 +115,53 @@ pcb_t* outProcQ( pcb_t** head, pcb_t *p){
 }
 
 
-/*
-this can be inlined or implemented as preprocessor macro
-*/
+/*This can be inlined or implemented as preprocessor macro*/
+/*Richiama la funzione fun per ogni elemento della lista puntata da head*/
 void forallProcQ(struct pcb_t *head, void fun(struct pcb_t *pcb, void *), void *arg){
-return;
+	if (!head)
+		return;
+	else{
+		fun(head, arg);
+		forallProcQ(head->p_next, fun, arg);
+	}
 }
 
 
 /* Tree view functions */
+
+/*Inserisce il PCB puntato da p come figlio del PCB puntato da parent*/
 void insertChild(pcb_t *parent, pcb_t *p){
-return;
-}
-pcb_t* removeChild(pcb_t *p){
-return;
-}
-pcb_t * outChild(pcb_t* p){
-return;
+	if(parent->p_firstchild == NULL)
+		parent->p_firstchild = p;
+	else
+		insertSibling(parent->p_firstchild, p);
 }
 
+/*Rimuove il primo figlio del PCB puntato da p. Se p non ha figli, restituisce NULL.*/
+pcb_t* removeChild(pcb_t *p){
+	if(p->p_firstchild == NULL)
+		return NULL;
+	else{
+		pcb_t *temp = p->p_firstchild;
+		p->p_firstchild = temp->p_sib; /*Aggiorno firstchild di p con il nuovo sibling*/
+		return temp;	
+	}
+}
+
+/*Rimuove il PCB puntato da p dalla lista dei figli del padre. Se il PCB puntato da p non ha un padre, restuisce NULL. Altrimenti restituisce l’elemento rimosso (cioe’ p). A differenza della removeChild, p puo’ trovarsi in una posizione arbitraria (ossia non e’ necessariamente il primo figlio del padre).*/
+pcb_t * outChild(pcb_t* p){
+	pcb_t *list_child = (p->parent)->firstchild;
+
+	if(p->parent == NULL)
+		return NULL;
+	else{
+		pcb_t *removed = outChild_rec(list_child, p);
+		return removed;
+		}
+}
+
+pcb_t* outChild_rec(pcb_t *list_child, pcb_t *p){
+	if(list_child == p)
+		return removeChild(p->parent); /*p è il primo figlio di p->parent*/
+	else outChild_rec(list_child->p_sib, p)
+}
