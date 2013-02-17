@@ -6,14 +6,19 @@
 #include "pcb.e"
 
 /* ASL handling functions */
-semd_t* getSemd(int key);
+semd_t* getSemd(int *key);
+semd_t* getSemd_rec(semd_t *semd_h_temp, int* key);
 void initASL();
+void initASL_rec(int count);
 
 int insertBlocked(int *key, pcb_t* p);
 pcb_t* removeBlocked(int *key);
 pcb_t* outBlocked(pcb_t *p);
 pcb_t* headBlocked(int *key);
 void outChildBlocked(pcb_t *p);
+
+semd_t *allocSem();
+
 
 
 /*

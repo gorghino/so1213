@@ -7,8 +7,10 @@
 
 /* PCB free list handling functions */
 void initPcbs(void);
+void initPcbs_rec(int count);
 void freePcb(pcb_t *p);
 pcb_t *allocPcb(void);
+
 
 
 /* PCB queue handling functions */
@@ -28,6 +30,7 @@ void forallProcQ(struct pcb_t *head, void fun(struct pcb_t *pcb, void *), void *
 void insertChild(pcb_t *parent, pcb_t *p);
 pcb_t* removeChild(pcb_t *p);
 pcb_t * outChild(pcb_t* p);
+pcb_t* outChild_rec(pcb_t *list_child, pcb_t *p);
 
 
 

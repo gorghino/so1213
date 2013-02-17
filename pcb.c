@@ -1,10 +1,12 @@
-#include "utils.c"
+#include "utils.h"
+#include "pcb.e"
+#include "libumps.h"
+#include "p1test.h"
 
 
 pcb_t pcb_table[MAXPROC];
-pcb_t *pcbfree_h;
+pcb_t *pcbfree_h = NULL;
 
-void initPcbs_rec(int count);
 
 /* PCB free list handling functions */
 
@@ -15,17 +17,18 @@ void initPcbs(void){
 }
 	
 void initPcbs_rec(int count){
-	if (count>MAXPROC)
+	if (count>=MAXPROC)
 		return;
 
-	insertPCBList(pcbfree_h, &pcb_table[count]);
+	insertPCBList(&pcbfree_h, &pcb_table[count]);
 	
-	initPcbs_rec(count++);
+	count++;
+	initPcbs_rec(count);
 }
 
 /*Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree)*/	
 void freePcb(pcb_t *p){
-	insertList(pcbfree_h, p);
+	insertPCBList(&pcbfree_h, p);
 	return;
 }
 
@@ -34,7 +37,7 @@ void freePcb(pcb_t *p){
 campi (NULL/0) e restituisce l’elemento rimosso.*/
 pcb_t *allocPcb(void){
 
-	if(emptyList(pcbfree_h))
+	if(emptyPCBList(pcbfree_h))
 		return NULL;
 	else{
 		pcb_t *ptemp = pcbfree_h;
@@ -64,7 +67,7 @@ pcb_t *allocPcb(void){
 
 void insertProcQ(pcb_t **head, pcb_t* p){
 	if (!head)
-		head = p; /*la queue è vuota, p è il primo elemento*/
+		(*head) = p; /*la queue è vuota, p è il primo elemento*/
 	else if(p->priority < (*head)->priority && head != NULL )
 			insertProcQ(&((*head)->p_next), p);
 	else if(p->priority > (*head)->priority && head != NULL){
@@ -74,8 +77,9 @@ void insertProcQ(pcb_t **head, pcb_t* p){
 	}
 	else{ 
 		/*Caso uguale, lo inserisco dopo, evito Starvation*/
+		/*@TODO: Rivedere. Qui inserisce come secondo e non come ultimo*/
 		p->p_next = (*head)->p_next;
-		(*head)-> = p;
+		(*head) = p;
 	}
 }
 
@@ -85,7 +89,7 @@ pcb_t* headProcQ(pcb_t* head){
 	if (!head)
 		return NULL;
 	else
-		return (*head);
+		return head;
 }
 
 
@@ -108,14 +112,15 @@ pcb_t* outProcQ( pcb_t** head, pcb_t *p){
 		return NULL;
 	else{
 		if((*head) == p)
-			removeProcQ(head);
+			return removeProcQ(head);
 		else
-			outProcQ(&((*head)->p->next), p)
+			return outProcQ(&((*head)->p_next), p);
 	}
 }
 
 
 /*This can be inlined or implemented as preprocessor macro*/
+
 /*Richiama la funzione fun per ogni elemento della lista puntata da head*/
 void forallProcQ(struct pcb_t *head, void fun(struct pcb_t *pcb, void *), void *arg){
 	if (!head)
@@ -131,28 +136,29 @@ void forallProcQ(struct pcb_t *head, void fun(struct pcb_t *pcb, void *), void *
 
 /*Inserisce il PCB puntato da p come figlio del PCB puntato da parent*/
 void insertChild(pcb_t *parent, pcb_t *p){
-	if(parent->p_firstchild == NULL)
-		parent->p_firstchild = p;
+	if(parent->p_first_child == NULL)
+		parent->p_first_child = p;
 	else
-		insertSibling(parent->p_firstchild, p);
+		insertSibling(parent->p_first_child, p);
 }
 
 /*Rimuove il primo figlio del PCB puntato da p. Se p non ha figli, restituisce NULL.*/
 pcb_t* removeChild(pcb_t *p){
-	if(p->p_firstchild == NULL)
+	if(p->p_first_child == NULL)
 		return NULL;
 	else{
-		pcb_t *temp = p->p_firstchild;
-		p->p_firstchild = temp->p_sib; /*Aggiorno firstchild di p con il nuovo sibling*/
+		pcb_t *temp = p->p_first_child;
+		p->p_first_child = temp->p_sib; /*Aggiorno firstchild di p con il nuovo sibling*/
 		return temp;	
 	}
 }
 
 /*Rimuove il PCB puntato da p dalla lista dei figli del padre. Se il PCB puntato da p non ha un padre, restuisce NULL. Altrimenti restituisce l’elemento rimosso (cioe’ p). A differenza della removeChild, p puo’ trovarsi in una posizione arbitraria (ossia non e’ necessariamente il primo figlio del padre).*/
-pcb_t * outChild(pcb_t* p){
-	pcb_t *list_child = (p->parent)->firstchild;
 
-	if(p->parent == NULL)
+pcb_t* outChild(pcb_t* p){
+	pcb_t *list_child = (p->p_parent)->p_first_child;
+
+	if(p->p_parent == NULL)
 		return NULL;
 	else{
 		pcb_t *removed = outChild_rec(list_child, p);
@@ -162,6 +168,7 @@ pcb_t * outChild(pcb_t* p){
 
 pcb_t* outChild_rec(pcb_t *list_child, pcb_t *p){
 	if(list_child == p)
-		return removeChild(p->parent); /*p è il primo figlio di p->parent*/
-	else outChild_rec(list_child->p_sib, p)
+		return removeChild(p->p_parent); /*p è il primo figlio di p->parent*/
+	else 
+		return outChild_rec(list_child->p_sib, p);
 }
