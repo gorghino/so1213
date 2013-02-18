@@ -7,7 +7,7 @@
 
 /* ASL handling functions */
 semd_t* getSemd(int *key);
-semd_t* getSemd_rec(semd_t *semd_h_temp, int* key);
+semd_t* getSemd_rec(semd_t **semd_h, int* key);
 void initASL();
 void initASL_rec(int count);
 
@@ -18,7 +18,7 @@ pcb_t* headBlocked(int *key);
 void outChildBlocked(pcb_t *p);
 
 semd_t *allocSem();
-
+semd_t *deAllocSem(semd_t **semd_h, semd_t *sem);
 
 
 /*

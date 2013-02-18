@@ -66,7 +66,7 @@ pcb_t *allocPcb(void){
 /* PCB priority queue handling functions */
 
 void insertProcQ(pcb_t **head, pcb_t* p){
-	if (!head)
+	if ((*head) == NULL)
 		(*head) = p; /*la queue è vuota, p è il primo elemento*/
 	else if(p->priority < (*head)->priority && head != NULL )
 			insertProcQ(&((*head)->p_next), p);
@@ -77,10 +77,21 @@ void insertProcQ(pcb_t **head, pcb_t* p){
 	}
 	else{ 
 		/*Caso uguale, lo inserisco dopo, evito Starvation*/
-		/*@TODO: Rivedere. Qui inserisce come secondo e non come ultimo*/
-		p->p_next = (*head)->p_next;
-		(*head) = p;
+		pcb_t *last_equal = getLast(head, p->priority);
+		
+		p->p_next = last_equal->p_next;
+		
+		last_equal->p_next = p;
 	}
+}
+
+pcb_t *getLast(pcb_t **head, int priority){
+	if( (*head)->p_next == NULL  || ((*head)->p_next)->priority != priority){
+		return (*head);
+		}
+	else{
+		return getLast(&((*head)->p_next), priority);
+		}
 }
 
 /*Restituisce l’elemento di testa della coda dei processi da head, SENZA RIMUOVERLO. Ritorna NULL se la coda non ha elementi.*/
@@ -95,7 +106,7 @@ pcb_t* headProcQ(pcb_t* head){
 
 /*Rimuove il primo elemento dalla coda dei processi puntata da head. Ritorna NULL se la coda e’ vuota. Altrimenti ritorna il puntatore all’elemento rimosso dalla lista.*/
 pcb_t* removeProcQ( pcb_t** head){
-	if (!head)
+	if ((*head) == NULL)
 		return NULL;
 	else{
 		pcb_t *temp = (*head);
@@ -108,14 +119,12 @@ pcb_t* removeProcQ( pcb_t** head){
 
 /* Rimuove il PCB puntato da p dalla coda dei processi puntata da head. Se p non e’ presente nella coda, restituisce NULL. (NOTA: p puo’ trovarsi in una posizione arbitraria della coda).*/
 pcb_t* outProcQ( pcb_t** head, pcb_t *p){
-	if (!head)
+	if (head == NULL)
 		return NULL;
-	else{
-		if((*head) == p)
+	else if((*head) == p)
 			return removeProcQ(head);
-		else
+	else
 			return outProcQ(&((*head)->p_next), p);
-	}
 }
 
 
@@ -136,8 +145,10 @@ void forallProcQ(struct pcb_t *head, void fun(struct pcb_t *pcb, void *), void *
 
 /*Inserisce il PCB puntato da p come figlio del PCB puntato da parent*/
 void insertChild(pcb_t *parent, pcb_t *p){
-	if(parent->p_first_child == NULL)
+	if(parent->p_first_child == NULL){
 		parent->p_first_child = p;
+		p->p_parent = parent;
+	}
 	else
 		insertSibling(parent->p_first_child, p);
 }
@@ -149,6 +160,8 @@ pcb_t* removeChild(pcb_t *p){
 	else{
 		pcb_t *temp = p->p_first_child;
 		p->p_first_child = temp->p_sib; /*Aggiorno firstchild di p con il nuovo sibling*/
+		temp->p_sib = NULL;
+		temp->p_parent = NULL;
 		return temp;	
 	}
 }
@@ -160,6 +173,8 @@ pcb_t* outChild(pcb_t* p){
 
 	if(p->p_parent == NULL)
 		return NULL;
+	else if(list_child == p)
+		return removeChild(p->p_parent);
 	else{
 		pcb_t *removed = outChild_rec(list_child, p);
 		return removed;
@@ -167,8 +182,16 @@ pcb_t* outChild(pcb_t* p){
 }
 
 pcb_t* outChild_rec(pcb_t *list_child, pcb_t *p){
-	if(list_child == p)
-		return removeChild(p->p_parent); /*p è il primo figlio di p->parent*/
-	else 
+	if(list_child->p_sib == NULL)
+		return NULL; /*p non esiste*/
+	else if(list_child->p_sib == p){
+		pcb_t *removed = list_child->p_sib;
+		list_child->p_sib = removed->p_sib;
+		removed->p_sib = NULL;
+		removed->p_parent = NULL;
+		return removed;
+	}
+		
+	else
 		return outChild_rec(list_child->p_sib, p);
 }

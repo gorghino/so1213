@@ -18,6 +18,7 @@ void insertProcQ( pcb_t **head, pcb_t* p);
 pcb_t* headProcQ(pcb_t* head);
 pcb_t* removeProcQ( pcb_t** head);
 pcb_t* outProcQ( pcb_t** head, pcb_t *p);
+pcb_t *getLast(pcb_t **head, int priority);
 
 
 /*
