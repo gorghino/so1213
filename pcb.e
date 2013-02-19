@@ -20,7 +20,6 @@ pcb_t* removeProcQ( pcb_t** head);
 pcb_t* outProcQ( pcb_t** head, pcb_t *p);
 pcb_t *getLast(pcb_t **head, int priority);
 
-
 /*
 this can be inlined or implemented as preprocessor macro
 */

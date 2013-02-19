@@ -37,7 +37,7 @@ void freePcb(pcb_t *p){
 campi (NULL/0) e restituisce l’elemento rimosso.*/
 pcb_t *allocPcb(void){
 
-	if(emptyPCBList(pcbfree_h))
+	if(emptyPCBList(&pcbfree_h))
 		return NULL;
 	else{
 		pcb_t *ptemp = pcbfree_h;
@@ -66,16 +66,19 @@ pcb_t *allocPcb(void){
 /* PCB priority queue handling functions */
 
 void insertProcQ(pcb_t **head, pcb_t* p){
-	if ((*head) == NULL)
+	if ((*head) == NULL){
 		(*head) = p; /*la queue è vuota, p è il primo elemento*/
-	else if(p->priority < (*head)->priority && head != NULL )
+		}
+	else if(p->priority < (*head)->priority && head != NULL ){
 			insertProcQ(&((*head)->p_next), p);
+			}
 	else if(p->priority > (*head)->priority && head != NULL){
 		/*Inserisco il puntatore di pcb_t*/
 		p->p_next = (*head);
 		(*head) = p;
 	}
-	else{ 
+	/*Casi uguali, scorro fino all'ultimo uguale e lo inserisco*/
+	else{
 		/*Caso uguale, lo inserisco dopo, evito Starvation*/
 		pcb_t *last_equal = getLast(head, p->priority);
 		
@@ -87,6 +90,7 @@ void insertProcQ(pcb_t **head, pcb_t* p){
 
 pcb_t *getLast(pcb_t **head, int priority){
 	if( (*head)->p_next == NULL  || ((*head)->p_next)->priority != priority){
+
 		return (*head);
 		}
 	else{
@@ -105,7 +109,7 @@ pcb_t* headProcQ(pcb_t* head){
 
 
 /*Rimuove il primo elemento dalla coda dei processi puntata da head. Ritorna NULL se la coda e’ vuota. Altrimenti ritorna il puntatore all’elemento rimosso dalla lista.*/
-pcb_t* removeProcQ( pcb_t** head){
+pcb_t* removeProcQ(pcb_t** head){
 	if ((*head) == NULL)
 		return NULL;
 	else{
@@ -118,13 +122,16 @@ pcb_t* removeProcQ( pcb_t** head){
 
 
 /* Rimuove il PCB puntato da p dalla coda dei processi puntata da head. Se p non e’ presente nella coda, restituisce NULL. (NOTA: p puo’ trovarsi in una posizione arbitraria della coda).*/
-pcb_t* outProcQ( pcb_t** head, pcb_t *p){
-	if (head == NULL)
+pcb_t* outProcQ(pcb_t** head, pcb_t *p){
+	if (head == NULL){
 		return NULL;
-	else if((*head) == p)
-			return removeProcQ(head);
-	else
-			return outProcQ(&((*head)->p_next), p);
+		}
+	else if((*head) == p){
+		return removeProcQ(head);
+	}
+	else{
+		return outProcQ(&((*head)->p_next), p);
+	}
 }
 
 
@@ -132,8 +139,9 @@ pcb_t* outProcQ( pcb_t** head, pcb_t *p){
 
 /*Richiama la funzione fun per ogni elemento della lista puntata da head*/
 void forallProcQ(struct pcb_t *head, void fun(struct pcb_t *pcb, void *), void *arg){
-	if (!head)
+	if (head == NULL){
 		return;
+		}
 	else{
 		fun(head, arg);
 		forallProcQ(head->p_next, fun, arg);
@@ -148,7 +156,7 @@ void insertChild(pcb_t *parent, pcb_t *p){
 	if(parent->p_first_child == NULL){
 		parent->p_first_child = p;
 		p->p_parent = parent;
-	}
+		}
 	else
 		insertSibling(parent->p_first_child, p);
 }

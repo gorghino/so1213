@@ -1,5 +1,6 @@
 #include "asl.e"
 #include "utils.h"
+#include "p1test.h"
 
 semd_t semd_table[MAXPROC];
 semd_t *semdFree_h;
@@ -7,7 +8,6 @@ semd_t *semd_h;
 
 #define TRUE 1
 #define FALSE 0
-
 
 
 
@@ -19,7 +19,7 @@ void initASL(){
 }
 
 void initASL_rec(int count){
-	if (count>MAXPROC)
+	if (count>=MAXPROC)
 		return;
 
 	insertSEMList(&semdFree_h, &semd_table[count]);
@@ -54,8 +54,8 @@ int insertBlocked(int *key, pcb_t* p){
 			
 			insertSEMList(&semd_h, semd_target);
 			p->p_semkey = key;
-			
 			insertProcQ(&(semd_target->s_procQ), p);
+
 			return FALSE;
 			}
 		else{
@@ -65,7 +65,7 @@ int insertBlocked(int *key, pcb_t* p){
 	}
 
 semd_t *allocSem(){
-	if(emptySEMList(semdFree_h))
+	if(emptySEMList(&semdFree_h))
 		return NULL;
 	else{
 		semd_t *ptemp = semdFree_h;
@@ -76,7 +76,6 @@ semd_t *allocSem(){
 		ptemp->s_procQ = NULL;
 		return ptemp;	
 	}
-
 }
 
 semd_t *deAllocSem(semd_t **semd_h, semd_t *sem){
@@ -92,6 +91,7 @@ semd_t *deAllocSem(semd_t **semd_h, semd_t *sem){
 /*Ritorna il primo PCB dalla coda dei processi bloccati(s_ProcQ) associata al SEMD della ASL con chiave key. Se tale descrittore non esiste nella ASL, restituisce NULL. Altrimenti,restituisce l’elemento rimosso. Se la coda dei processi bloccati per il semaforo diventa vuota, rimuove il descrittore corrispondente dalla ASL e lo inserisce nella coda dei descrittori liberi (semdFree).*/
 pcb_t* removeBlocked(int *key){
 	semd_t *semd_target = getSemd(key);
+	
 	if(semd_target){
 		pcb_t *removed = removeProcQ(&(semd_target->s_procQ));
 		if (semd_target->s_procQ == NULL)
@@ -129,8 +129,10 @@ pcb_t* outBlocked(pcb_t *p){
 void outChildBlocked(pcb_t *p){
 	semd_t *semd_target = getSemd(p->p_semkey);
 	outProcQ(&(semd_target->s_procQ), p);
-	if(p->p_first_child == NULL)
+	if(p->p_first_child == NULL){
+		p->p_first_child = NULL;
 		return;
+	}
 	else
 		outChildBlocked(p->p_first_child);
 }
@@ -142,6 +144,7 @@ void forallBlocked(int *key, void fun(struct pcb_t *pcb, void *), void *arg){
 	semd_t *semd_target = getSemd(key);
 	if (!semd_target->s_procQ)
 		return;
+
 	else
-		forallProcQ(semd_target->s_procQ, fun, arg);	
+		forallProcQ(semd_target->s_procQ, fun, arg);
 }

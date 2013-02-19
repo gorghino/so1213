@@ -4,11 +4,13 @@
 
 void insertPCBList(pcb_t **pcblist_p, pcb_t *pcb_elem){
 	if(*pcblist_p == NULL){
+		/*addokbuf("Aggiungo il primo\n");*/
 		*pcblist_p = pcb_elem;
 		pcb_elem->p_next = NULL;
 		return;
 	}
 	else if ((*pcblist_p)->p_next == NULL) {
+		/*addokbuf("Aggiungo i restanti fino a MAXPROC-1\n");*/
 		(*pcblist_p)->p_next = pcb_elem;
 		pcb_elem->p_next = NULL;
 	}
@@ -26,18 +28,17 @@ void insertSEMList(semd_t **semlist_p, semd_t *sem_elem){
 		sem_elem->s_next = NULL;
 	}
 	else insertSEMList(&(*semlist_p)->s_next, sem_elem);
-	
 }
 
-int emptyPCBList(pcb_t *pcblist_p){
-	if(pcblist_p == NULL)
+int emptyPCBList(pcb_t **pcblist_p){
+	if(*pcblist_p == NULL)
 		return 1;
 	else
 		return 0;
 }
 
-int emptySEMList(semd_t *semlist_p){
-	if(semlist_p == NULL)
+int emptySEMList(semd_t **semlist_p){
+	if(*semlist_p == NULL)
 		return 1;
 	else
 		return 0;
