@@ -41,7 +41,6 @@
 #include "pcb.e"
 #include "asl.e"
 
-
 #define	MAXSEM	MAXPROC
 
 #define MAX_PCB_PRIORITY		10
@@ -294,7 +293,7 @@ int main() {
 	insertChild(procp[0], procp[2]);
 	insertChild(procp[0], procp[3]);
 	insertChild(procp[0], procp[7]);
-	addokbuf("Inserted 4 children of pcb0  \n");
+	addokbuf("Inserted 2 children of pcb0  \n");
 
 	/* make procp[8],procp[9] children of procp[7] */
 	insertChild(procp[7], procp[8]);
@@ -395,10 +394,9 @@ int main() {
 		if (insertBlocked(&sem[i], procp[i]))
 			adderrbuf("ERROR:insertBlocked() test #2: unexpected TRUE   ");
 	}
-	addokbuf("TEST 2 - PARTE 2...\n");
+
 	for (i = 8; i < 10; i++) {
 		procp[i] = allocPcb();
-		addokbuf("AllocatoPCB...\n");
 		if (insertBlocked(&sem[1], procp[i]))
 			adderrbuf("ERROR:insertBlocked() test #2: unexpected TRUE   ");
 	}
@@ -469,7 +467,6 @@ int main() {
 	insertChild(procp[0], procp[2]);
 	insertChild(procp[2], procp[3]);
 	insertChild(procp[3], procp[4]);
-	
 
 	/* Testing outChildBlocked */
 	outChildBlocked(procp[2]);

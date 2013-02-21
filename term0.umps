@@ -20,7 +20,7 @@ Let's see if now the queue is empty
  Test process queues module: OK      
  Testing process trees...
 Inserting...   
-Inserted 4 children of pcb0  
+Inserted 2 children of pcb0  
 Inserted 2 children of pcb7  
     removed the first child of 7
    re-inserted son in 7, now removing in 0
@@ -39,9 +39,6 @@ Now starting with test of semaphores
 Initializing active semaphore list   
  Test insertBlocked(): test #1 started  
 Test insertBlocked(): test #2 started  
-TEST 2 - PARTE 2...
-AllocatoPCB...
-AllocatoPCB...
 Counting the number of elements inside semaphores
    i have found 3 elements in sem 1; correct
 '   i have found 1 elements in sem 2; correct

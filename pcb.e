@@ -12,7 +12,6 @@ void freePcb(pcb_t *p);
 pcb_t *allocPcb(void);
 
 
-
 /* PCB queue handling functions */
 void insertProcQ( pcb_t **head, pcb_t* p);
 pcb_t* headProcQ(pcb_t* head);
