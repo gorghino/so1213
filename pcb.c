@@ -24,8 +24,8 @@
 #include "p1test.h"
 
 
-pcb_t pcb_table[MAXPROC];
-pcb_t *pcbfree_h = NULL;
+pcb_t pcb_table[MAXPROC]; /*Tabella dei PCB*/
+pcb_t *pcbfree_h = NULL; /*Puntatore alla testa della lista dei PCB liberi*/
 
 
 /************ Funzioni per gestire le liste di PCB ************/
@@ -130,6 +130,7 @@ pcb_t* removeProcQ(pcb_t** head){
 		/*Rimuovo e aggiorno i puntatori*/
 		pcb_t *temp = (*head);
 		(*head) = (*head)->p_next;
+		temp->p_next = NULL;
 		return temp;
 		}
 }
