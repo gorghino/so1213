@@ -1,7 +1,7 @@
 /*  Copyright (C) 2013 Aguiari Davide, Giacò Jacopo, Trotta Marco
  *  Authors: Aguiari Davide davide.aguiari@studio.unibo.it
- *			 Giacò Jacopo
- 					Trotta Marco 
+ *			 Giacò Jacopo jacopo.giaco@studio.unibo.it
+ 					Trotta Marco marco.trotta2@studio.unibo.it
  							
  *
  *  This program is free software: you can redistribute it and/or modify
