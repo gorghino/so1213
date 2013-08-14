@@ -22,6 +22,7 @@
 #include "utils.h"
 #include "pcb.e"
 #include "libumps.h"
+#include "p1test.h"
 
 
 pcb_t pcb_table[MAXPROC]; /*Tabella dei PCB*/
@@ -33,7 +34,6 @@ pcb_t *pcbfree_h = NULL; /*Puntatore alla testa della lista dei PCB liberi*/
 
 /*Inizializza la pcbFree in modo da contenere tutti gli elementi della pcb_table.*/
 void initPcbs(void){
-	addokbuf("Pota");
 	initPcbs_rec(0);
 }
 	

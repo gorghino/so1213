@@ -21,6 +21,7 @@
 
 #include "asl.e"
 #include "utils.h"
+#include "p1test.h"
 
 semd_t semd_table[MAXPROC]; /*Tabella dei semafori*/
 semd_t *semdFree_h; /*Puntatore alla testa della lista dei semafori liberi*/

@@ -19,7 +19,7 @@
  */
 
 #include "utils.h"
-#include "print.h"
+#include "p1test.h"
 
 #define TRUE 1
 #define FALSE 0

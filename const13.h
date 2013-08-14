@@ -35,6 +35,38 @@
 #define SYSBK_NEWAREA 0x200003d4
 #define SYSBK_OLDAREA 0x20000348
 
+/* Used for SYS5 processing */
+#define SYS5_TYPES 3
+#define SYS5_TLB 0
+#define SYS5_PGMTRAP 1
+#define SYS5_SYSBK 2
+
+/* nucleus (phase2)-handled SYSCALL values */
+#define CREATEPROCESS 1
+#define TERMINATEPROCESS 2
+#define VERHOGEN 3
+#define PASSEREN 4
+#define SPECTRAPVEC 5
+#define GETCPUTIME 6
+#define WAITCLOCK 7
+#define WAITIO 8
+
+#define SYSCALL_MAX 8
+
+/* VM/IO support level (phase3)-handled SYSCALL values */
+#define READTERMINAL 9
+#define WRITETERMINAL 10
+#define VSEMVIRT 11
+#define PSEMVIRT 12
+#define DELAY 13
+#define DISK_PUT 14
+#define DISK_GET 15
+#define WRITEPRINTER 16
+#define GETTOD 17
+#define TERMINATE 18
+
+#define SYSCALL_TOT 18
+
 /* Bus register area. Among other informations, the start and amount of
    installed RAM are stored here */
 #define BUS_RAMBASEADDR 0x10000000
@@ -122,7 +154,7 @@
 #define DEV_REGBLOCK_SIZE (DEV_REG_SIZE * DEV_PER_INT)
 
 /* Scheduling constants */
-#define SCHED_TIME_SLICE 5000     /* in microseconds, aka 5 milliseconds */
+#define SCHED_TIME_SLICE 4000     /* in microseconds, aka 5 milliseconds */
 #define SCHED_PSEUDO_CLOCK 100000 /* pseudo-clock tick "slice" length */
 #define SCHED_BOGUS_SLICE 500000  /* just to make sure */
 
@@ -265,8 +297,14 @@
 #define OFF 	0
 #define EOS '\0'
 
-/* #define NULL ((void *)0) */
-
 #define CR 0x0a   /* carriage return as returned by the terminal */
+
+/* multiprocessor support */
+#define STATUS_TE  0x08000000
+
+#define NCPUS 0x10000500
+#define GET_NCPU ((*((U32 *)NCPUS)))
+
+#define GET_CPU_NEWOLDAREAS_ADDR(PRID) ((PRID == 0) ? INT_OLDAREA : ((int) &(newoldareas[PRID].int_old_area)))
 
 #endif
