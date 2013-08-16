@@ -20,6 +20,7 @@
 
 #include "main.h"
 #include "scheduler.h"
+#include "handler.h"
 #include "pcb.e"
 #include "asl.e"
 #include "utils.h"
@@ -134,12 +135,9 @@ void main(){
 
 	pcb_t *new_process = allocPcb();
 
-	state_t new_process_state;
-	new_process_state.status &= ~(STATUS_IEc|STATUS_VMc|STATUS_TE|STATUS_KUc);
-	new_process_state.reg_sp = RAMTOP-FRAME_SIZE;
-	new_process_state.pc_epc = new_process_state.reg_t9 = (memaddr)test; /*p2test*/
-
-	new_process->p_s = new_process_state;
+	new_process->p_s.status &= ~(STATUS_IEc|STATUS_VMc|STATUS_TE|STATUS_KUc);
+	new_process->p_s.reg_sp = RAMTOP-FRAME_SIZE;
+	new_process->p_s.pc_epc = new_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
 	insertProcQ(&ready_queue, allocPcb());
 

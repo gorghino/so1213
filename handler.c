@@ -18,5 +18,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void handler(){
-}
+void tlbHandler(){}
+void trapHandler(){}
+void syscallHandler(){}
