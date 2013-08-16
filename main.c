@@ -23,16 +23,15 @@
 #include "const13.h"
 #include "uMPStypes.h"
 #include "print.h"
+#include "main.h"
 
 #define	MAX_CPUS 2
 #define NUM_DEVICES 8
 
-extern void addokbuf(char *strp);
-extern void test();
 
 
 void main(){
-    int i = 0;
+	int i = 0;
 
     state_t	new_old_areas[MAX_CPUS][8];	
 
@@ -89,12 +88,12 @@ void main(){
 		actually two independent sub-devices (see Section 5.7pops), the nucleus maintains 
 		two semaphores for each terminal device. All of these semaphores need to be initialized to zero.*/
 
-	semd_t semd_disk[7];
-	semd_t semd_tape[7];
-	semd_t semd_ethernet[7];
-	semd_t semd_printer[7];
-	semd_t semd_terminal_read[7];
-	semd_t semd_terminal_write[7];
+	semd_t semd_disk[8];
+	semd_t semd_tape[8];
+	semd_t semd_ethernet[8];
+	semd_t semd_printer[8];
+	semd_t semd_terminal_read[8];
+	semd_t semd_terminal_write[8];
 
 	int j = 0;
 	for(j=0;j<NUM_DEVICES;j++){
