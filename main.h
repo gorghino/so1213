@@ -1,6 +1,8 @@
+
+
 extern void addokbuf(char *strp);
 extern void test();
-extern void scheduler();
+void scheduler();
 
 extern void interruptHandler();
 extern void tlbHandler();

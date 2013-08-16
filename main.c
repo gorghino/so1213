@@ -18,22 +18,25 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "main.h"
+#include "scheduler.h"
+#include "pcb.e"
+#include "asl.e"
 #include "utils.h"
 #include "libumps.h"
 #include "const13.h"
 #include "uMPStypes.h"
 #include "print.h"
-#include "main.h"
+
 
 #define	MAX_CPUS 2
 #define NUM_DEVICES 8
 
 
-
 void main(){
 	int i = 0;
 
-    state_t	new_old_areas[MAX_CPUS][8];	
+    state_t *new_old_areas[MAX_CPUS][8];	
 
 
     /*Populate the four New Areas in the ROM Reserved Frame. (See Section
@@ -50,10 +53,10 @@ void main(){
 
 	    /*Set the PC to the address of your nucleus function that is to handle
 			exceptions of that type.*/
-	    new_old_areas[i][0]->pc_epc = new_area->reg_t9 = (memaddr)interruptHandler;
-	    new_old_areas[i][2]->pc_epc = new_area->reg_t9 = (memaddr)tlbHandler;
-	    new_old_areas[i][4]->pc_epc = new_area->reg_t9 = (memaddr)trapHandler;
-	    new_old_areas[i][6]->pc_epc = new_area->reg_t9 = (memaddr)syscallHandler;
+	    new_old_areas[i][0]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)interruptHandler;
+	    new_old_areas[i][2]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)tlbHandler;
+	    new_old_areas[i][4]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)trapHandler;
+	    new_old_areas[i][6]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)syscallHandler;
 
 	    /*Set the Status register to mask all interrupts, turn virtual memory off,
 			enable the processor Local Timer, and be in kernel-mode.*/
@@ -73,12 +76,14 @@ void main(){
 
     /*Initialize the Level 2 (phase 1 - see Chapter 2) data structures:*/
     initPcbs();
-    initSemd();
+    initASL();
 
 
     /*Initialize all nucleus maintained variables: Process Count, Soft-block Count,
 		Ready Queue, and Current Process.*/
-    int process_count, softBlock_count;
+
+	int process_count;
+    int softBlock_count;
     pcb_t *ready_queue = NULL; /*Puntatore alla testa della ready Queue*/
     pcb_t *current_process;
 
@@ -88,12 +93,12 @@ void main(){
 		actually two independent sub-devices (see Section 5.7pops), the nucleus maintains 
 		two semaphores for each terminal device. All of these semaphores need to be initialized to zero.*/
 
-	semd_t semd_disk[8];
-	semd_t semd_tape[8];
-	semd_t semd_ethernet[8];
-	semd_t semd_printer[8];
-	semd_t semd_terminal_read[8];
-	semd_t semd_terminal_write[8];
+	semd_t *semd_disk[8];
+	semd_t *semd_tape[8];
+	semd_t *semd_ethernet[8];
+	semd_t *semd_printer[8];
+	semd_t *semd_terminal_read[8];
+	semd_t *semd_terminal_write[8];
 
 	int j = 0;
 	for(j=0;j<NUM_DEVICES;j++){
@@ -105,7 +110,7 @@ void main(){
 		semd_terminal_write[j] = 0;
 	}
 
-	semd_t pseudo_clock = 0;
+	semd_t *pseudo_clock = 0;
 
 	/*Instantiate a single process and place its ProcBlk in the Ready Queue. A
 		process is instantiated by allocating a ProcBlk (i.e. allocPcb()), and
@@ -130,9 +135,10 @@ void main(){
 	pcb_t *new_process = allocPcb();
 
 	state_t new_process_state;
-	new_process_state->status &= ~(STATUS_IEc|STATUS_VMc|STATUS_TE|STATUS_KUc);
-	new_process_state->reg_sp = RAMTOP-FRAME_SIZE;
-	new_process_state->pc_epc = new_area->reg_t9 = (memaddr)test; /*p2test*/
+	new_process_state.status &= ~(STATUS_IEc|STATUS_VMc|STATUS_TE|STATUS_KUc);
+	new_process_state.reg_sp = RAMTOP-FRAME_SIZE;
+	new_process_state.pc_epc = new_process_state.reg_t9 = (memaddr)test; /*p2test*/
+
 	new_process->p_s = new_process_state;
 
 	insertProcQ(&ready_queue, allocPcb());

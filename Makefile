@@ -7,7 +7,7 @@ LD = $(XT_PRG_PREFIX)ld
 # uMPS2-related paths
 
 # Simplistic search for the umps2 install. prefix. If you have umps2
-# installed on some weird location, set UMPS2_DIR_PREFIX by hand.
+# installed on some weird locaiton, set UMPS2_DIR_PREFIX by hand.
 ifneq ($(wildcard /usr/bin/umps2),)
     UMPS2_DIR_PREFIX = /usr
 else
@@ -35,11 +35,14 @@ all: kernel.core.umps
 kernel.core.umps: kernel
 	umps2-elf2umps -k kernel
 
-kernel: main.o print.o utils.o
+kernel: main.o print.o utils.o scheduler.o
 	mipsel-linux-ld -T /usr/local/share/umps2/elf32ltsmip.h.umpscore.x /usr/local/lib/umps2/crtso.o main.o print.o utils.o /usr/local/lib/umps2/libumps.o -o 		kernel
 
-main.o: main.c const13.h uMPStypes.h types13.h libumps.h
+main.o: main.c main.h scheduler.h pcb.e asl.e const13.h uMPStypes.h types13.h libumps.h
 	mipsel-linux-gcc -pedantic -Wall -c main.c
+
+scheduler.o: scheduler.c scheduler.h
+	mipsel-linux-gcc -pedantic -Wall -c scheduler.c
 
 print.o: print.c const13.h uMPStypes.h types13.h libumps.h
 	mipsel-linux-gcc -pedantic -Wall -c print.c
