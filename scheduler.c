@@ -19,4 +19,6 @@
  */
 
 void scheduler(){
+	addokbuf("SCHEDULER\n");
+	PANIC();
 }
