@@ -35,7 +35,8 @@
 #include "types13.h"
 
 #include "libumps.h"
-
+ 
+extern void addokbuf(char *strp);
 typedef unsigned int devregtr;
 
 typedef U32 cpu_t;
@@ -151,7 +152,9 @@ void print(char *msg) {
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
-void test() {	
+void test() {
+
+	addokbuf("Test() chiamato");
 
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 

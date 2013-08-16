@@ -34,6 +34,8 @@
 #define NUM_DEVICES 8
 
 
+
+
 void main(){
 	int i = 0;
 
@@ -85,7 +87,7 @@ void main(){
 		Ready Queue, and Current Process.*/
 
 	addokbuf("Inizializzo strutture dati\n");
-	int process_count;
+	int process_count = 1;
     int softBlock_count;
     pcb_t *ready_queue = NULL; /*Puntatore alla testa della ready Queue*/
     pcb_t *current_process;
@@ -143,8 +145,10 @@ void main(){
 	new_process->p_s.reg_sp = RAMTOP-FRAME_SIZE;
 	new_process->p_s.pc_epc = new_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
-	insertProcQ(&ready_queue, allocPcb());
+	insertProcQ(&ready_queue, new_process);
+	process_count++;
 
 	/*Call the scheduler*/
-	scheduler();
+	scheduler(process_count, softBlock_count, &ready_queue, new_process);
 }
+
