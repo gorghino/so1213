@@ -54,6 +54,6 @@ void syscallHandler(){
 		break;
 		case EXC_BREAKPOINT: addokbuf("BREAKPOINT\n"); break;
 	}
-	addokbuf("Spengo\n");
-	HALT();
+	sysBp_old->pc_epc += 4; 
+	LDST(sysBp_old); 
 }

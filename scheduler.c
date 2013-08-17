@@ -56,6 +56,8 @@ void scheduler(int process_count, int softBlock_count, pcb_t *ready_queue, pcb_t
 	while(1){
 		LDST(&(current_process->p_s));
 
+		addokbuf("CHECK SCHEDULER\n");
+
 		if(!process_count)
 			HALT();
 		if(process_count && !softBlock_count)
