@@ -19,8 +19,13 @@
  */
 #include "libumps.h"
 #include "const13.h"
+#include "uMPStypes.h"
 
 extern void addokbuf(char *strp);
+
+state_t *sysBp_old = (state_t *)SYSBK_OLDAREA;
+state_t *pgmTrap_old = (state_t *)PGMTRAP_OLDAREA;
+state_t *tlbTrap_old = (state_t *)TLB_OLDAREA;
 
 void tlbHandler(){
 	addokbuf("tlbHandler: Panico!");
@@ -36,7 +41,7 @@ void syscallHandler(){
 	switch(cause){
 		case EXC_SYSCALL: 
 			addokbuf("SYSCALL\n"); 
-			switch(cause){
+			switch(sysBp_old->reg_a0){
 				case CREATEPROCESS: addokbuf("CREATEPROCESS\n"); break;
 				case TERMINATEPROCESS: addokbuf("TERMINATEPROCESS\n"); break;
 				case VERHOGEN: addokbuf("VERHOGEN\n"); break;
