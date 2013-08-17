@@ -18,4 +18,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void interruptHandler(){}
+extern void addokbuf(char *strp);
+
+void interruptHandler(){
+	addokbuf("Interrupt Pota");
+}

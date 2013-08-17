@@ -20,6 +20,7 @@
 #include "libumps.h"
 #include "const13.h"
 #include "uMPStypes.h"
+#include "asl.e"
 
 extern void addokbuf(char *strp);
 
@@ -44,8 +45,18 @@ void syscallHandler(){
 			switch(sysBp_old->reg_a0){
 				case CREATEPROCESS: addokbuf("CREATEPROCESS\n"); break;
 				case TERMINATEPROCESS: addokbuf("TERMINATEPROCESS\n"); break;
-				case VERHOGEN: addokbuf("VERHOGEN\n"); break;
-				case PASSEREN: addokbuf("PASSEREN\n"); break;
+
+				case VERHOGEN: 
+					addokbuf("VERHOGEN\n"); 
+					int *semV = sysBp_old->reg_a1;
+					(*semV)++;
+					break;
+
+				case PASSEREN: addokbuf("PASSEREN\n"); 
+					int *semP = sysBp_old->reg_a1;
+					(*semP)--;
+					break;
+
 				case SPECTRAPVEC: addokbuf("SPECTRAPVEC\n"); break;
 				case GETCPUTIME: addokbuf("GETCPUTIME\n"); break;
 				case WAITCLOCK: addokbuf("WAITCLOCK\n"); break;
