@@ -57,16 +57,32 @@ void main(){
 	    /*Set the PC to the address of your nucleus function that is to handle
 			exceptions of that type.*/
 	    new_old_areas[i][0]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)interruptHandler;
-	    new_old_areas[i][2]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)tlbHandler;
-	    new_old_areas[i][4]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)trapHandler;
-	    new_old_areas[i][6]->pc_epc = new_old_areas[i][0]->reg_t9 = (memaddr)syscallHandler;
+	    new_old_areas[i][2]->pc_epc = new_old_areas[i][2]->reg_t9 = (memaddr)tlbHandler;
+	    new_old_areas[i][4]->pc_epc = new_old_areas[i][4]->reg_t9 = (memaddr)trapHandler;
+	    new_old_areas[i][6]->pc_epc = new_old_areas[i][6]->reg_t9 = (memaddr)syscallHandler;
 
 	    /*Set the Status register to mask all interrupts, turn virtual memory off,
 			enable the processor Local Timer, and be in kernel-mode.*/
+
+	    /*IEc: bit 0 - The “current” global interrupt enable bit. When 0, regardless
+			of the settings in Status.IM all external interrupts are disabled. When 1,
+			external interrupt acceptance is controlled by Status.IM.
+		KUc: bit 1 - The “current” kernel-mode user-mode control bit. When Sta-
+			tus.KUc=0 the processor is in kernel-mode.
+		VMc: Bit 24 - The “current” VM on/off flag bit. Status.VMc=0 indicates
+			that virtual memory translation is currently off
+		TE: Bit 27 - the processor Local Timer enable bit. A 1-bit mask that en-
+			ables/disables the processor’s Local Timer. See Section 5.2.2 for more in-
+			formation about this timer.*/
+
 		new_old_areas[i][0]->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
+		new_old_areas[i][0]->status |= STATUS_TE;
 		new_old_areas[i][2]->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
+		new_old_areas[i][2]->status |= STATUS_TE;
 		new_old_areas[i][4]->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
+		new_old_areas[i][4]->status |= STATUS_TE;
 		new_old_areas[i][6]->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
+		new_old_areas[i][6]->status |= STATUS_TE;
 
 		/*Set the $SP to RAMTOP. Each exception handler will use the last
 			frame of RAM for its stack.*/
@@ -141,7 +157,8 @@ void main(){
 	addokbuf("Alloco pcb\n");
 	pcb_t *new_process = allocPcb();
 
-	new_process->p_s.status &= ~(STATUS_IEc|STATUS_VMc|STATUS_TE|STATUS_KUc);
+	new_process->p_s.status |= STATUS_IEc|STATUS_TE|STATUS_KUc;
+	new_process->p_s.status &= ~STATUS_VMc;
 	new_process->p_s.reg_sp = RAMTOP-FRAME_SIZE;
 	new_process->p_s.pc_epc = new_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 

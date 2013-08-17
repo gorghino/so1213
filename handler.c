@@ -23,12 +23,32 @@
 extern void addokbuf(char *strp);
 
 void tlbHandler(){
+	addokbuf("tlbHandler: Panico!");
 	PANIC();
 }
 void trapHandler(){
-	
+	addokbuf("trapHandler: Panico!");
+	PANIC();
 }
 
 void syscallHandler(){
-	PANIC();
+	int cause = CAUSE_EXCCODE_GET(getCAUSE());
+	switch(cause){
+		case EXC_SYSCALL: 
+			addokbuf("SYSCALL\n"); 
+			switch(cause){
+				case CREATEPROCESS: addokbuf("CREATEPROCESS\n"); break;
+				case TERMINATEPROCESS: addokbuf("TERMINATEPROCESS\n"); break;
+				case VERHOGEN: addokbuf("VERHOGEN\n"); break;
+				case PASSEREN: addokbuf("PASSEREN\n"); break;
+				case SPECTRAPVEC: addokbuf("SPECTRAPVEC\n"); break;
+				case GETCPUTIME: addokbuf("GETCPUTIME\n"); break;
+				case WAITCLOCK: addokbuf("WAITCLOCK\n"); break;
+				case WAITIO: addokbuf("WAITIO\n"); break;
+			}
+		break;
+		case EXC_BREAKPOINT: addokbuf("BREAKPOINT\n"); break;
+	}
+	addokbuf("Spengo\n");
+	HALT();
 }

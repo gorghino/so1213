@@ -45,8 +45,7 @@
 	block Count is zero. Take an appropriate deadlock detected action. (e.g.
 	Invoke the PANIC ROM service/instruction.)
 	3. If the Process Count > 0 and the Soft-block Count > 0 enter a Wait State.
-	A Wait State is a state where the processor is “twiddling its thumbs,” or3.2. NUCLEUS INITIALIZATION
-	17
+	A Wait State is a state where the processor is “twiddling its thumbs,” or
 	waiting until an interrupt to occur. μMPS2 supports a WAIT instruction ex-
 	pressly for this purpose. See Section Section 6.2-pops for more information
 	about the WAIT instruction.*/

@@ -154,9 +154,11 @@ void print(char *msg) {
 /*                                                                   */
 void test() {
 
-	addokbuf("Test() chiamato");
+	addokbuf("Test() chiamato\n");
 
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+
+	addokbuf("Syscall chiamata\n");
 
 	print("p1 v(testsem)\n");
 
