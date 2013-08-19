@@ -51,7 +51,7 @@ void initASL_rec(int count){
 
 /*Cerca nella ASL il semaforo con chiave key e restituisce un puntatore ad esso*/
 semd_t* getSemd(int *key){
-	addokbuf("Cerco semaforo");
+	addokbuf("Cerco semaforo\n");
 	return getSemd_rec(&semd_h, key);
 }
 

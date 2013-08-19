@@ -3,7 +3,8 @@
 
 extern void addokbuf(char *strp);
 extern void test();
-extern void scheduler();
+extern void schedule();
+extern void init();
 extern void interruptHandler();
 extern void tlbHandler();
 extern void trapHandler();

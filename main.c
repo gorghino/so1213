@@ -33,13 +33,16 @@
 #define	MAX_CPUS 2
 #define NUM_DEVICES 8
 
-
+pcb_t *ready_queue[MAX_CPUS];
+pcb_t *current_process;
+// Conta quanti processi nella coda ready della CPU
+int process_count[MAX_CPUS];
+int softBlock_count;
+state_t *new_old_areas[MAX_CPUS][8];	
 
 
 void main(){
 	int i = 0;
-
-    state_t *new_old_areas[MAX_CPUS][8];	
 
     addokbuf("Popolo le aree\n");
     /*Populate the four New Areas in the ROM Reserved Frame. (See Section
@@ -103,10 +106,12 @@ void main(){
 		Ready Queue, and Current Process.*/
 
 	addokbuf("Inizializzo strutture dati\n");
-	int process_count = 1;
-    int softBlock_count;
-    pcb_t *ready_queue = NULL; /*Puntatore alla testa della ready Queue*/
-    pcb_t *current_process;
+	process_count[0]++;
+
+	for (i=0; i<MAX_CPUS;i++){
+    	ready_queue[MAX_CPUS] = NULL; /*Puntatore alla testa della ready Queue*/
+    	process_count[MAX_CPUS] = 0;
+    }
 
     /*Initialize all nucleus maintained semaphores. 
     	In addition to the above nucleus variables, there is one semaphore variable for each external (sub)device
@@ -162,10 +167,10 @@ void main(){
 	new_process->p_s.reg_sp = RAMTOP-FRAME_SIZE;
 	new_process->p_s.pc_epc = new_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
-	insertProcQ(&ready_queue, new_process);
-	process_count++;
+	insertProcQ(&ready_queue[0], new_process);
+	process_count[0]++;
 
 	/*Call the scheduler*/
-	scheduler(process_count, softBlock_count, &ready_queue, new_process);
+	init();
 }
 

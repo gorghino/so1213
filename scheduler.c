@@ -21,6 +21,8 @@
 #include "print.h"
 #include "libumps.h"
 #include "scheduler.h"
+#include "pcb.e"
+#include "main.h"
 
 
  /*Your nucleus should guarantee finite progress; consequently, every ready process
@@ -50,19 +52,70 @@
 	pressly for this purpose. See Section Section 6.2-pops for more information
 	about the WAIT instruction.*/
 
-void scheduler(int process_count, int softBlock_count, pcb_t *ready_queue, pcb_t *current_process){
+#define	MAX_CPUS 2
+
+extern void addokbuf(char *strp);
+extern pcb_t *current_process;
+extern pcb_t *ready_queue[MAX_CPUS];
+extern int softBlock_count[MAX_CPUS];
+extern state_t *new_old_areas[MAX_CPUS][8];	
+
+state_t scheduler[MAX_CPUS];
+
+// Conta quanti processi nella coda ready della CPU
+extern int process_count[MAX_CPUS];
+
+void schedule(){
+
+	int cpuID = getPRID();
+	pcb_t *process;
 	addokbuf("SCHEDULER\n");
 
-	while(1){
-		LDST(&(current_process->p_s));
+	if((process = removeProcQ(&ready_queue[cpuID])) != NULL){
+		forallProcQ(ready_queue[cpuID], increment_priority, NULL);
+		addokbuf("Ready Queue non vuota: CARICO PROCESSO\n");
+		current_process = process;
+		process_count[cpuID]++;
 
-		addokbuf("CHECK SCHEDULER\n");
+		LDST(&(process->p_s));
+	}
+	else{
+		addokbuf("Ready Queue vuota: CHECK SCHEDULER\n");
+		softBlock_count[cpuID]++;
 
-		if(!process_count)
+		if(!process_count[cpuID])
 			HALT();
-		if(process_count && !softBlock_count)
+		if(process_count[cpuID] && !softBlock_count[cpuID])
 			PANIC(); /*Deadlock detection*/
-		if(process_count && softBlock_count)
+		if(process_count[cpuID] && softBlock_count[cpuID]){
+			addokbuf("Ready Queue vuota: Wait\n");
 			WAIT();	
+		}
 	}
 }
+
+void pota(){
+while(1)
+	addokbuf("Pota\n");
+}
+
+
+void init(){
+	int i;
+	for (i = 1; i < MAX_CPUS; i++) {
+		addokbuf("Accendo CPU\n");
+		scheduler[i].status &= ~(STATUS_IEc|STATUS_KUc| STATUS_VMc);
+		scheduler[i].status |= STATUS_TE;
+		scheduler[i].pc_epc = scheduler[i].reg_t9 = (memaddr) schedule;
+		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i  );
+		process_count[i]++;
+		INITCPU(i,&scheduler[i],new_old_areas[i]);
+	}
+	schedule();
+}
+
+void increment_priority(struct pcb_t *pcb)
+{
+	pcb->priority++; 
+}
+

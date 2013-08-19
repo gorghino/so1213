@@ -23,10 +23,15 @@
 #include "asl.e"
 
 extern void addokbuf(char *strp);
+extern pcb_t *current_process;
+extern pcb_t *ready_queue;
+extern int process_count;
+extern int softBlock_count;
 
 state_t *sysBp_old = (state_t *)SYSBK_OLDAREA;
 state_t *pgmTrap_old = (state_t *)PGMTRAP_OLDAREA;
 state_t *tlbTrap_old = (state_t *)TLB_OLDAREA;
+
 
 void tlbHandler(){
 	addokbuf("tlbHandler: Panico!");
@@ -39,6 +44,7 @@ void trapHandler(){
 
 void syscallHandler(){
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
+	pcb_t *unblocked;
 	switch(cause){
 		case EXC_SYSCALL: 
 			addokbuf("SYSCALL\n"); 
@@ -50,16 +56,30 @@ void syscallHandler(){
 					addokbuf("VERHOGEN\n"); 
 					int *semV = sysBp_old->reg_a1;
 					(*semV)++;
+					// Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue
+					if ((unblocked = removeBlocked(sysBp_old->reg_a1)) != NULL){
+						softBlock_count--;
+						insertProcQ(&ready_queue, unblocked);
+					}
+
 					break;
 
 				case PASSEREN: addokbuf("PASSEREN\n"); 
 					int *semP = sysBp_old->reg_a1;
 					(*semP)--;
+					if(*semP < 0){
+						// Se il valore del semaforo è negativo, il processo viene bloccato e accodato 
+
+
+					}
 					break;
 
 				case SPECTRAPVEC: addokbuf("SPECTRAPVEC\n"); break;
 				case GETCPUTIME: addokbuf("GETCPUTIME\n"); break;
 				case WAITCLOCK: addokbuf("WAITCLOCK\n"); break;
+
+				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
+  					Quando invocata, la SYS8 esegue una P sul semaforo associato al device idenficato da intNo, dnume e waitForTermRead*/
 				case WAITIO: addokbuf("WAITIO\n"); break;
 			}
 		break;
