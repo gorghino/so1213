@@ -21,5 +21,7 @@
 extern void addokbuf(char *strp);
 
 void interruptHandler(){
-	addokbuf("Interrupt Pota");
+	addokbuf("Interrupt Mrta");
+	int cause=getCAUSE();
+	
 }

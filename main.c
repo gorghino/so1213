@@ -1,6 +1,6 @@
 /*  Copyright (C) 2013 Aguiari Davide, Giacò Jacopo, Trotta Marco
  *  Authors: Aguiari Davide davide.aguiari@studio.unibo.it
- *    		 Giacò Jacopo jacopo.giaco@studio.unibo.it
+ *        	 Giacò Jacopo jacopo.giaco@studio.unibo.it
  					Trotta Marco marco.trotta2@studio.unibo.it
  							
  *
@@ -30,13 +30,13 @@
 #include "print.h"
 
 
-#define	MAX_CPUS 2
+#define	MAX_CPUS 16
 #define NUM_DEVICES 8
 
 pcb_t *ready_queue[MAX_CPUS];
 pcb_t *current_process;
 // Conta quanti processi nella coda ready della CPU
-int process_count[MAX_CPUS];
+int process_count;
 int softBlock_count;
 state_t *new_old_areas[MAX_CPUS][8];	
 
@@ -106,11 +106,11 @@ void main(){
 		Ready Queue, and Current Process.*/
 
 	addokbuf("Inizializzo strutture dati\n");
-	process_count[0]++;
+	process_count++;
 
 	for (i=0; i<MAX_CPUS;i++){
     	ready_queue[MAX_CPUS] = NULL; /*Puntatore alla testa della ready Queue*/
-    	process_count[MAX_CPUS] = 0;
+    	process_count = 0;
     }
 
     /*Initialize all nucleus maintained semaphores. 
@@ -159,17 +159,7 @@ void main(){
 		TYPES. H .) Hence this will be done when initializing the four New Areas as
 		well as the processor state that defines this single process.*/
 
-	addokbuf("Alloco pcb\n");
-	pcb_t *new_process = allocPcb();
-
-	new_process->p_s.status |= STATUS_IEc|STATUS_TE|STATUS_KUc;
-	new_process->p_s.status &= ~STATUS_VMc;
-	new_process->p_s.reg_sp = RAMTOP-FRAME_SIZE;
-	new_process->p_s.pc_epc = new_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
-
-	insertProcQ(&ready_queue[0], new_process);
-	process_count[0]++;
-
+	
 	/*Call the scheduler*/
 	init();
 }

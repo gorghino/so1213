@@ -13,3 +13,6 @@ void insertSEMList(semd_t **semlist_p, semd_t *sem_elem);
 int emptyPCBList(pcb_t **pcblist_p);
 int emptySEMList(semd_t **semlist_p);
 void insertSibling(pcb_t *firstchild, pcb_t *p);
+
+void strreverse();
+void itoa();

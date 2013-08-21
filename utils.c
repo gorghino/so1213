@@ -83,3 +83,50 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 	else insertSibling(firstchild->p_sib, p);
 }
 
+
+
+
+
+
+//UTILS
+
+/**
+ * strreverse(puntatore a char, puntatore a char): rovescia una stringa
+ * \param begin inizio stringa
+ * \param end fine stringa
+ */
+void strreverse(char* begin, char* end) {
+       
+        char aux;
+        while(end>begin)
+                aux=*end, *end--=*begin, *begin++=aux;
+       
+}
+
+
+/**
+ * itoa(valore, puntatore della stringa, base in cui convertire) : converte un intero in una stringa nella base specificata
+ * \param value intero da convertire
+ * \param str indirizzo dove scrivere la stringa
+ * \param base base in cui convertire l'intero
+ */
+void itoa(int value, char* str, int base) {
+       
+        static char num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+        char* wstr=str;
+        int sign;
+       
+        // Validate base
+        if (base<2 || base>35){ *wstr='\0'; return; }
+       
+        // Take care of sign
+        if ((sign=value) < 0) value = -value;
+ 
+        // Conversion. Number is reversed.
+        do *wstr++ = num[value%base]; while(value/=base);
+        if(sign<0) *wstr++='-';
+        *wstr='\0';
+       
+        // Reverse string
+        strreverse(str,wstr-1);
+}
