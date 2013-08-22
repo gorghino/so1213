@@ -38,6 +38,7 @@ pcb_t *current_process[MAX_CPUS];
 // Conta quanti processi nella coda ready della CPU
 int process_count[MAX_CPUS];
 int softBlock_count[MAX_CPUS];
+int pseudo_clock[MAX_CPUS];
 state_t *new_old_areas[MAX_CPUS][8];	
 
 
@@ -115,8 +116,9 @@ int main(){
 	addokbuf("Inizializzo strutture dati\n");
 	
 	for (i=0; i<MAX_CPUS;i++){
-    	ready_queue[MAX_CPUS] = NULL; /*Puntatore alla testa della ready Queue*/
-    	process_count[MAX_CPUS] = 0;   	
+    	ready_queue[i] = NULL; /*Puntatore alla testa della ready Queue*/
+    	process_count[i] = 0;  
+    	pseudo_clock[i] = 0; 	
     }
 
     /*Initialize all nucleus maintained semaphores. 
@@ -142,8 +144,6 @@ int main(){
 		sem_terminal_read[j] = 0;
 		sem_terminal_write[j] = 0;
 	}
-
-	int pseudo_clock = 0;
 
 	/*Instantiate a single process and place its ProcBlk in the Ready Queue. A
 		process is instantiated by allocating a ProcBlk (i.e. allocPcb()), and

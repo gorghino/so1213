@@ -82,8 +82,9 @@ void schedule(){
 		process_count[cpuID]++;
 
 		pRunning[cpuID]->p_s.status |= STATUS_TE;
-		setTIMER(5000); /*5ms*/
+		setTIMER(4000); /*4ms*/
 
+		current_process[cpuID] = pRunning[cpuID];
 		LDST(&(pRunning[cpuID]->p_s));
 	}
 	else{
@@ -93,7 +94,7 @@ void schedule(){
 		if(process_count && softBlock_count[cpuID]){
 			//addokbuf("Ready Queue vuota: Wait\n");
 			WAIT();
-			while(1);
+			//while(1);
 		}
 
 		if(!process_count[cpuID]){
@@ -117,8 +118,6 @@ void init(){
 		scheduler[i].status &= ~(STATUS_IEc|STATUS_KUc| STATUS_VMc);
 		scheduler[i].pc_epc = scheduler[i].reg_t9 = (memaddr) schedule;
 		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i);
-		process_count[cpuID]++;
-
 
 		/*if(i > 0){
 			INITCPU(i,&scheduler[i],new_old_areas[i]);

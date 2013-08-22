@@ -23,11 +23,10 @@
 #include "asl.e"
 
 extern void addokbuf(char *strp);
-extern pcb_t *current_process;
-extern pcb_t *ready_queue;
-extern int process_count;
-extern int softBlock_count;
-
+extern pcb_t *current_process[MAX_CPUS];
+extern pcb_t *ready_queue[MAX_CPUS];
+extern int process_count[MAX_CPUS];
+extern int softBlock_count[MAX_CPUS];
 state_t *sysBp_old = (state_t *)SYSBK_OLDAREA;
 state_t *pgmTrap_old = (state_t *)PGMTRAP_OLDAREA;
 state_t *tlbTrap_old = (state_t *)TLB_OLDAREA;
@@ -44,13 +43,45 @@ void trapHandler(){
 
 void syscallHandler(){
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
+	int cpuID = getPRID();
 	pcb_t *unblocked;
 	switch(cause){
 		case EXC_SYSCALL: 
 			addokbuf("SYSCALL\n"); 
 			switch(sysBp_old->reg_a0){
-				case CREATEPROCESS: addokbuf("CREATEPROCESS\n"); break;
-				case TERMINATEPROCESS: addokbuf("TERMINATEPROCESS\n"); break;
+				case CREATEPROCESS: 
+					addokbuf("CREATEPROCESS\n"); 
+					state_t *child_state;
+					pcb_t *child;
+					//a1 should contain the physical address of a processor state
+					//area at the time this instruction is executed.
+					//This processor state should be used
+					//as the initial state for the newly created process
+					child_state = (state_t*)current_process[cpuID]->reg_a1
+					//If the new process cannot be created due
+					//to lack of resources (for example no more free ProcBlk’s),
+					// an error code of -1 is
+					//placed/returned in the caller’s v0,
+					// otherwise, return the value 0 in the caller’s v0.
+					//The SYS1 service is requested by the calling process by placing the value
+					//1 in a0, the physical address of a processor state in a1, and then executing a
+					//SYSCALL instruction.
+					if ((child=getPcb())<0) {
+						current_process[cpuID]->reg_v0 = -1;
+					}
+					else {
+						current_process[cpuID]->reg_v0 = 0;	
+						child_state=child->p_s;
+						child->priority=current_process[cpuID]->reg_a2;
+						insertChild(current_process[cpuID], child);
+						insertProcQ(&ready_queue[cpuID], child);
+					} 
+					break;
+
+				case TERMINATEPROCESS: 
+					addokbuf("TERMINATEPROCESS\n"); 
+					outChildBlocked(current_process[cpuID]);					
+					break;
 
 				case VERHOGEN: 
 					addokbuf("VERHOGEN\n"); 
@@ -58,19 +89,19 @@ void syscallHandler(){
 					(*semV)++;
 					// Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue
 					if ((unblocked = removeBlocked(sysBp_old->reg_a1)) != NULL){
-						softBlock_count--;
+						softBlock_count[cpuID]--;
 						insertProcQ(&ready_queue, unblocked);
 					}
-
 					break;
 
-				case PASSEREN: addokbuf("PASSEREN\n"); 
+				case PASSEREN: 
+					addokbuf("PASSEREN\n"); 
 					int *semP = sysBp_old->reg_a1;
 					(*semP)--;
 					if(*semP < 0){
 						// Se il valore del semaforo è negativo, il processo viene bloccato e accodato 
-
-
+						softBlock_count[cpuID]++;
+						insertBlocked(semP, current_process);
 					}
 					break;
 
