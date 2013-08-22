@@ -154,16 +154,16 @@ void print(char *msg) {
 /*                                                                   */
 void test() {
 
-	addokbuf("Test() chiamato\n");
+	//addokbuf("Test() chiamato\n");
 
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
-	if(testsem)
+	/*if(testsem)
 		addokbuf("Semaforo incrementato\n");
 	else if(!testsem)
-		addokbuf("Semaforo incrementato chiamata\n");
+		addokbuf("Semaforo incrementato chiamata\n");*/
 	
-	addokbuf("Syscall chiamata\n");
+	//addokbuf("Syscall chiamata\n");
 
 	print("p1 v(testsem)\n");
 

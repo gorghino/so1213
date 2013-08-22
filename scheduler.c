@@ -52,92 +52,92 @@
 	pressly for this purpose. See Section Section 6.2-pops for more information
 	about the WAIT instruction.*/
 
-#define	MAX_CPUS 16
+#define	MAX_CPUS 1
 
 extern void addokbuf(char *strp);
 extern void itoa();
 extern void strreverse();
-extern pcb_t *current_process;
+
+extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int softBlock_count[MAX_CPUS];
 extern state_t *new_old_areas[MAX_CPUS][8];	
+// Conta quanti processi nella coda ready della CPU
+extern int process_count[MAX_CPUS];
+
+HIDDEN unsigned int pcb_Lock = 1;
 
 state_t scheduler[MAX_CPUS];
 
-// Conta quanti processi nella coda ready della CPU
-extern int process_count;
+
 
 void schedule(){
-
 	int cpuID = getPRID();
-	pcb_t *process;
+	pcb_t *pRunning[MAX_CPUS];
 	//addokbuf("SCHEDULER\n");
 
-	if((process = removeProcQ(&ready_queue[cpuID])) != NULL){
+	if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL){
 		forallProcQ(ready_queue[cpuID], increment_priority, NULL);
-		//addokbuf("Ready Queue non vuota: CARICO PROCESSO\n");
-		current_process = process;
-		process_count++;
+		//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
+		process_count[cpuID]++;
 
-		LDST(&(process->p_s));
+		pRunning[cpuID]->p_s.status |= STATUS_TE;
+		setTIMER(5000); /*5ms*/
+
+		LDST(&(pRunning[cpuID]->p_s));
 	}
 	else{
-		//addokbuf("Ready Queue vuota: CHECK SCHEDULER\n");
-		softBlock_count[cpuID]++;
+		if(process_count[cpuID] && !softBlock_count[cpuID])
+			PANIC(); /*Deadlock detection*/
 
-		if(!process_count){
+		if(process_count && softBlock_count[cpuID]){
+			//addokbuf("Ready Queue vuota: Wait\n");
+			WAIT();
+			while(1);
+		}
+
+		if(!process_count[cpuID]){
 			addokbuf("Spengo\n");
 			HALT();
-		}
-		if(process_count && !softBlock_count[cpuID])
-			PANIC(); /*Deadlock detection*/
-		if(process_count && softBlock_count[cpuID]){
-			addokbuf("Ready Queue vuota: Wait\n");
-			WAIT();	
-		}
+		}		
 	}
 }
 
 void pota(){
-	while(1)
-		addokbuf("Pota\n");
+	while(1);
 }
 
 
 void init(){
 	int i;
-
+			
+	int cpuID = getPRID();
 	for (i = 0; i < MAX_CPUS; i++) {
 		addokbuf("Accendo CPU\n");
-
-		new_old_areas[i][0]->reg_sp = RAMTOP - (FRAME_SIZE * i);
-		new_old_areas[i][2]->reg_sp = RAMTOP - (FRAME_SIZE * i);	
-		new_old_areas[i][4]->reg_sp = RAMTOP - (FRAME_SIZE * i);
-		new_old_areas[i][6]->reg_sp = RAMTOP - (FRAME_SIZE * i);;
-
 		scheduler[i].status &= ~(STATUS_IEc|STATUS_KUc| STATUS_VMc);
 		scheduler[i].pc_epc = scheduler[i].reg_t9 = (memaddr) schedule;
 		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i);
-		process_count++;
+		process_count[cpuID]++;
 
-		if(i>0)
+
+		/*if(i > 0){
 			INITCPU(i,&scheduler[i],new_old_areas[i]);
+		}*/
 	}
-	char buffer[1024];
-	itoa(i, buffer, 10);
-	addokbuf(buffer);
-	/*pcb_t *new_process = allocPcb();
 
-	new_process->p_s.status |= STATUS_IEc|STATUS_TE|STATUS_KUc;
-	new_process->p_s.status &= ~STATUS_VMc;
-	new_process->p_s.reg_sp = scheduler[MAX_CPUS-1].reg_sp - FRAME_SIZE;
-	new_process->p_s.pc_epc = new_process->p_s.reg_t9 = (memaddr)pota; /*p2test*/
+	/* Extracting the first free pcb */
+	while(!CAS(&pcb_Lock, 1, 0)) ;
+	pcb_t* init_process = allocPcb();
+	CAS(&pcb_Lock, 0, 1);
 
-	/*insertProcQ(&ready_queue[0], new_process);
-	process_count++;*/
+	init_process->p_s.status |= STATUS_IEp|STATUS_INT_UNMASKED;
+	init_process->p_s.status &= ~STATUS_KUp;
+	init_process->p_s.reg_sp = scheduler[MAX_CPUS-1].reg_sp - FRAME_SIZE;
+	init_process->p_s.pc_epc = init_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
+
+	insertProcQ(&ready_queue[cpuID], init_process);
 	schedule();
-	//while(1);
 }
 
 void increment_priority(struct pcb_t *pcb)

@@ -30,18 +30,18 @@
 #include "print.h"
 
 
-#define	MAX_CPUS 16
+#define	MAX_CPUS 1
 #define NUM_DEVICES 8
 
 pcb_t *ready_queue[MAX_CPUS];
-pcb_t *current_process;
+pcb_t *current_process[MAX_CPUS];
 // Conta quanti processi nella coda ready della CPU
-int process_count;
-int softBlock_count;
+int process_count[MAX_CPUS];
+int softBlock_count[MAX_CPUS];
 state_t *new_old_areas[MAX_CPUS][8];	
 
 
-void main(){
+int main(){
 	int i = 0;
 
     addokbuf("Popolo le aree\n");
@@ -89,10 +89,18 @@ void main(){
 
 		/*Set the $SP to RAMTOP. Each exception handler will use the last
 			frame of RAM for its stack.*/
-		new_old_areas[i][0]->reg_sp = RAMTOP;
-		new_old_areas[i][2]->reg_sp = RAMTOP;	
-		new_old_areas[i][4]->reg_sp = RAMTOP;	
-		new_old_areas[i][6]->reg_sp = RAMTOP;	
+		if(i == 0){
+			new_old_areas[i][0]->reg_sp = RAMTOP;
+			new_old_areas[i][2]->reg_sp = RAMTOP;	
+			new_old_areas[i][4]->reg_sp = RAMTOP;	
+			new_old_areas[i][6]->reg_sp = RAMTOP;
+		}
+		else{
+			new_old_areas[i][0]->reg_sp = RAMTOP - (FRAME_SIZE * i);
+			new_old_areas[i][2]->reg_sp = RAMTOP - (FRAME_SIZE * i);	
+			new_old_areas[i][4]->reg_sp = RAMTOP - (FRAME_SIZE * i);
+			new_old_areas[i][6]->reg_sp = RAMTOP - (FRAME_SIZE * i);
+		}
     }
 
 
@@ -104,13 +112,11 @@ void main(){
 
     /*Initialize all nucleus maintained variables: Process Count, Soft-block Count,
 		Ready Queue, and Current Process.*/
-
 	addokbuf("Inizializzo strutture dati\n");
-	process_count++;
-
+	
 	for (i=0; i<MAX_CPUS;i++){
     	ready_queue[MAX_CPUS] = NULL; /*Puntatore alla testa della ready Queue*/
-    	process_count = 0;
+    	process_count[MAX_CPUS] = 0;   	
     }
 
     /*Initialize all nucleus maintained semaphores. 
@@ -120,24 +126,24 @@ void main(){
 		two semaphores for each terminal device. All of these semaphores need to be initialized to zero.*/
 
 	addokbuf("Inizializzo semafori\n");
-	semd_t *semd_disk[8];
-	semd_t *semd_tape[8];
-	semd_t *semd_ethernet[8];
-	semd_t *semd_printer[8];
-	semd_t *semd_terminal_read[8];
-	semd_t *semd_terminal_write[8];
+	int sem_disk[8];
+	int sem_tape[8];
+	int sem_ethernet[8];
+	int sem_printer[8];
+	int sem_terminal_read[8];
+	int sem_terminal_write[8];
 
 	int j = 0;
 	for(j=0;j<NUM_DEVICES;j++){
-		semd_disk[j] = 0;
-		semd_tape[j] = 0;
-		semd_ethernet[j] = 0;
-		semd_printer[j] = 0;
-		semd_terminal_read[j] = 0;
-		semd_terminal_write[j] = 0;
+		sem_disk[j] = 0;
+		sem_tape[j] = 0;
+		sem_ethernet[j] = 0;
+		sem_printer[j] = 0;
+		sem_terminal_read[j] = 0;
+		sem_terminal_write[j] = 0;
 	}
 
-	semd_t *pseudo_clock = 0;
+	int pseudo_clock = 0;
 
 	/*Instantiate a single process and place its ProcBlk in the Ready Queue. A
 		process is instantiated by allocating a ProcBlk (i.e. allocPcb()), and
@@ -162,5 +168,6 @@ void main(){
 	
 	/*Call the scheduler*/
 	init();
+	return -1;
 }
 
