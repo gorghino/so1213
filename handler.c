@@ -22,6 +22,8 @@
 #include "uMPStypes.h"
 #include "asl.e"
 
+ #define	MAX_CPUS 1
+
 extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
@@ -57,7 +59,7 @@ void syscallHandler(){
 					//area at the time this instruction is executed.
 					//This processor state should be used
 					//as the initial state for the newly created process
-					child_state = (state_t*)current_process[cpuID]->reg_a1
+					child_state = (state_t *)(current_process[cpuID]->p_s).reg_a1;
 					//If the new process cannot be created due
 					//to lack of resources (for example no more free ProcBlk’s),
 					// an error code of -1 is
@@ -66,13 +68,13 @@ void syscallHandler(){
 					//The SYS1 service is requested by the calling process by placing the value
 					//1 in a0, the physical address of a processor state in a1, and then executing a
 					//SYSCALL instruction.
-					if ((child=getPcb())<0) {
-						current_process[cpuID]->reg_v0 = -1;
+					if ( ( child = allocPcb() ) != NULL ) {
+						(current_process[cpuID]->p_s).reg_v0 = -1;
 					}
 					else {
-						current_process[cpuID]->reg_v0 = 0;	
-						child_state=child->p_s;
-						child->priority=current_process[cpuID]->reg_a2;
+						(current_process[cpuID]->p_s).reg_v0 = 0;	
+						child_state=&(child->p_s);
+						child->priority=(current_process[cpuID]->p_s).reg_a2;
 						insertChild(current_process[cpuID], child);
 						insertProcQ(&ready_queue[cpuID], child);
 					} 

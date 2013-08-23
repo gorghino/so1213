@@ -154,7 +154,7 @@
 #define DEV_REGBLOCK_SIZE (DEV_REG_SIZE * DEV_PER_INT)
 
 /* Scheduling constants */
-#define SCHED_TIME_SLICE 4000     /* in microseconds, aka 5 milliseconds */
+#define SCHED_TIME_SLICE 4000     /* in microseconds, aka 4 milliseconds */
 #define SCHED_PSEUDO_CLOCK 100000 /* pseudo-clock tick "slice" length */
 #define SCHED_BOGUS_SLICE 500000  /* just to make sure */
 
