@@ -18,10 +18,18 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern void addokbuf(char *strp);
+#include "utils.h"
+#include "libumps.h"
+#include "const13.h"
+#include "uMPStypes.h"
 
 void interruptHandler(){
-	addokbuf("Interrupt Mrta");
+  char buffer[1024];
+
 	int cause=getCAUSE();
 	
+	if(CAUSE_IP_GET(cause, INT_TIMER)) {
+	  itoa(cause, buffer, 10);
+	}
+
 }
