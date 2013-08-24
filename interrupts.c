@@ -25,11 +25,46 @@
 
 void interruptHandler(){
   char buffer[1024];
-
-	int cause=getCAUSE();
-	
-	if(CAUSE_IP_GET(cause, INT_TIMER)) {
-	  itoa(cause, buffer, 10);
+  
+  int cause=getCAUSE();
+  
+	/* Inter processor interrupts */
+	if(CAUSE_IP_GET(cause, 0)) {
+	  itoa(0, buffer, 10);
 	}
-
+	
+	/* Processor Local Timer */
+	if(CAUSE_IP_GET(cause, 1)) {
+	  itoa(1, buffer, 10);
+	}
+	
+	/* Bus (Interval Timer) */
+	if(CAUSE_IP_GET(cause, 2)) {
+	  itoa(2, buffer, 10);
+	}
+	
+	/* Disk Devices */
+	if(CAUSE_IP_GET(cause, 3)) {
+	  itoa(3, buffer, 10);
+	}
+	
+	/* Tape Devices */
+	if(CAUSE_IP_GET(cause, 4)) {
+	  itoa(4, buffer, 10);
+	}
+	
+	/* Network (Ethernet) Devices */
+	if(CAUSE_IP_GET(cause, 5)) {
+	  itoa(5, buffer, 10);
+	}
+	
+	/* Printer Devices */
+	if(CAUSE_IP_GET(cause, 6)) {
+	  itoa(6, buffer, 10);
+	}
+	
+	/* Terminal Devices */
+	if(CAUSE_IP_GET(cause, 7)) {
+	  itoa(7, buffer, 10);
+	}
 }
