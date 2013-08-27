@@ -38,13 +38,13 @@ kernel.core.umps: kernel
 kernel: scheduler.o interrupts.o handler.o main.o print.o utils.o pcb.o asl.o p2test.o 
 	mipsel-linux-ld -T /usr/local/share/umps2/elf32ltsmip.h.umpscore.x /usr/local/lib/umps2/crtso.o main.o scheduler.o interrupts.o handler.o asl.o pcb.o print.o utils.o p2test.o /usr/local/lib/umps2/libumps.o -o kernel
 
-main.o: main.c main.h scheduler.h interrupts.h pcb.e asl.e const13.h uMPStypes.h types13.h libumps.h
+main.o: main.c main.h scheduler.h interrupts.h pcb.e asl.e const13.h const13_customized.h uMPStypes.h types13.h libumps.h
 	mipsel-linux-gcc -pedantic -Wall -c main.c
 
-scheduler.o: scheduler.c scheduler.h
+scheduler.o: scheduler.c scheduler.h const13.h
 	mipsel-linux-gcc -pedantic -Wall -c scheduler.c
 
-interrupts.o: interrupts.c interrupts.h
+interrupts.o: interrupts.c interrupts.h 
 	mipsel-linux-gcc -pedantic -Wall -c interrupts.c
 
 handler.o: handler.c handler.h
@@ -53,10 +53,10 @@ handler.o: handler.c handler.h
 p2test.o: p2test.c
 	mipsel-linux-gcc -pedantic -Wall -c p2test.c
 
-asl.o: asl.c asl.e utils.o types13.h uMPStypes.h const13.h libumps.h
+asl.o: asl.c asl.e utils.o types13.h uMPStypes.h const13.h const13_customized.h libumps.h
 	mipsel-linux-gcc -pedantic -Wall -c asl.c
 
-pcb.o: pcb.c pcb.e utils.o types13.h uMPStypes.h const13.h libumps.h
+pcb.o: pcb.c pcb.e utils.o types13.h uMPStypes.h const13.h const13_customized.h libumps.h
 	mipsel-linux-gcc -pedantic -Wall -c pcb.c
 
 print.o: print.c const13.h uMPStypes.h types13.h libumps.h

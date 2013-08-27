@@ -21,6 +21,7 @@
 #include "print.h"
 #include "libumps.h"
 #include "scheduler.h"
+#include "const13.h"
 #include "pcb.e"
 #include "main.h"
 
@@ -70,7 +71,6 @@ HIDDEN unsigned int pcb_Lock = 1;
 state_t scheduler[MAX_CPUS];
 
 
-
 void schedule(){
 	int cpuID = getPRID();
 	pcb_t *pRunning[MAX_CPUS];
@@ -85,6 +85,8 @@ void schedule(){
 		setTIMER(4000); /*4ms*/
 
 		current_process[cpuID] = pRunning[cpuID];
+
+		current_process[cpuID]->startTime = GET_TODLOW;
 		LDST(&(pRunning[cpuID]->p_s));
 	}
 	else{
@@ -134,8 +136,11 @@ void init(){
 	init_process->p_s.reg_sp = scheduler[MAX_CPUS-1].reg_sp - FRAME_SIZE;
 	init_process->p_s.pc_epc = init_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
-
 	insertProcQ(&ready_queue[cpuID], init_process);
+
+	/*Sets the global Interval Timer*/
+	SET_IT(SCHED_PSEUDO_CLOCK);
+
 	schedule();
 }
 

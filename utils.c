@@ -23,6 +23,15 @@
 
 #define TRUE 1
 #define FALSE 0
+#define	MAX_CPUS 1
+
+
+extern pcb_t *current_process[MAX_CPUS];
+extern pcb_t *ready_queue[MAX_CPUS];
+extern int process_count[MAX_CPUS];
+extern int softBlock_count[MAX_CPUS];
+
+
 
 /*insertPCBList inserisce il pcb puntato da pcb_elem nella lista puntata da pcblist_p*/
 void insertPCBList(pcb_t **pcblist_p, pcb_t *pcb_elem){
@@ -83,6 +92,29 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 	else insertSibling(firstchild->p_sib, p);
 }
 
+void P(int *key, pcb_t *process){
+	semd_t *semd;
+	if((semd = getSemd(key))!=NULL){
+		*(semd->s_key)--;
+		if(semd->s_key < 0){
+			insertBlocked(key, process);
+			softBlock_count[getPRID()]++;
+		}
+	}
+}
+
+void V(int *key, pcb_t *process){
+	semd_t *semd;
+	if((semd = getSemd(key))!=NULL){
+		*(semd->s_key)++;
+		if(semd->s_key >= 0){
+			removeBlocked(key);
+			softBlock_count[getPRID()]--;
+		}
+	}
+
+}
+
 
 
 
@@ -129,4 +161,5 @@ void itoa(int value, char* str, int base) {
        
         // Reverse string
         strreverse(str,wstr-1);
-}
+} 
+

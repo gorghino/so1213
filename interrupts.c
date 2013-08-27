@@ -18,10 +18,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* TERMINAL */
 #include "utils.h"
 #include "libumps.h"
 #include "const13.h"
+#include "const13_customized.h"
 #include "uMPStypes.h"
+
+extern void addokbuf(char *strp);
 
 void interruptHandler(){
   char buffer[1024];
@@ -39,32 +43,35 @@ void interruptHandler(){
 	}
 	
 	/* Bus (Interval Timer) */
-	if(CAUSE_IP_GET(cause, 2)) {
+	if(CAUSE_IP_GET(cause, INT_TIMER)) {
 	  itoa(2, buffer, 10);
 	}
 	
 	/* Disk Devices */
-	if(CAUSE_IP_GET(cause, 3)) {
+	if(CAUSE_IP_GET(cause, INT_DISK)) {
 	  itoa(3, buffer, 10);
 	}
 	
 	/* Tape Devices */
-	if(CAUSE_IP_GET(cause, 4)) {
+	if(CAUSE_IP_GET(cause, INT_TAPE)) {
 	  itoa(4, buffer, 10);
 	}
 	
 	/* Network (Ethernet) Devices */
-	if(CAUSE_IP_GET(cause, 5)) {
+	if(CAUSE_IP_GET(cause, INT_UNUSED)) {
 	  itoa(5, buffer, 10);
 	}
 	
 	/* Printer Devices */
-	if(CAUSE_IP_GET(cause, 6)) {
+	if(CAUSE_IP_GET(cause, INT_PRINTER)) {
 	  itoa(6, buffer, 10);
 	}
 	
 	/* Terminal Devices */
-	if(CAUSE_IP_GET(cause, 7)) {
-	  itoa(7, buffer, 10);
+	if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
+		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
+		itoa(*terminaldevice, buffer, 10);
+	    
+
 	}
 }

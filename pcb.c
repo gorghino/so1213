@@ -24,7 +24,7 @@
 #include "libumps.h"
 #include "p1test.h"
 
-
+ 
 pcb_t pcb_table[MAXPROC]; /*Tabella dei PCB*/
 pcb_t *pcbfree_h = NULL; /*Puntatore alla testa della lista dei PCB liberi*/
 

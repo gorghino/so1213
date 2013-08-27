@@ -17,6 +17,17 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
+//definizione per states_array[6]
+ 
+ #define TLB_OLD 		0
+ #define TLB_NEW		1
+ #define PGMTRAP_OLD 	2
+ #define PGMTRAP_NEW 3
+ #define SYSBREAKPOINT_OLD 	4
+ #define SYSBREAKPOINT_NEW 	5	
+
 #include "libumps.h"
 #include "const13.h"
 #include "uMPStypes.h"
@@ -107,17 +118,69 @@ void syscallHandler(){
 					}
 					break;
 
-				case SPECTRAPVEC: addokbuf("SPECTRAPVEC\n"); break;
-				case GETCPUTIME: addokbuf("GETCPUTIME\n"); break;
-				case WAITCLOCK: addokbuf("WAITCLOCK\n"); break;
+				case SPECTRAPVEC: 
+					addokbuf("SPECTRAPVEC\n"); 
+					/*nel registro a1 ho il tipo di eccezione e da li ho 3 casi. (TLB exceptions, PGMTRAP e SysBp).
+					Nella struttura pcb abbiamo un array [0-5] dove vengono salvati gli stati del processore.
+					Nei reg_a3 abbiamo i NEW (da utilizzare nel caso si verifichino exceptions o PGMTRAP) 
+					e nei reg_a2 gli OLD, salviamo anche questi nel nostro states_array[6]*/
+
+					
+					if(!current_process[cpuID]->p_s.reg_a1){
+						//TLB exceptions
+					current_process[cpuID]->states_array[TLB_NEW] = current_process[cpuID]->p_s.reg_a3;
+					current_process[cpuID]->states_array[TLB_OLD] = current_process[cpuID]->p_s.reg_a2;
+						}
+					else if(current_process[cpuID]->p_s.reg_a1==1){
+						//PGMTRAP exceptions
+						current_process[cpuID]->states_array[PGMTRAP_NEW] = current_process[cpuID]->p_s.reg_a3;
+						current_process[cpuID]->states_array[PGMTRAP_OLD] = current_process[cpuID]->p_s.reg_a2;
+					}
+					else if (current_process[cpuID]->p_s.reg_a1==2){
+						//SysBp exceptions
+						current_process[cpuID]->states_array[SYSBREAKPOINT_NEW] = current_process[cpuID]->p_s.reg_a3;
+						current_process[cpuID]->states_array[SYSBREAKPOINT_OLD] = current_process[cpuID]->p_s.reg_a2;
+					}
+					break;
+                    
+				case GETCPUTIME: 
+					addokbuf("GETCPUTIME\n"); 
+					//current_process[cpuID]->p_s.reg_v0 = (GET_TODLOW() - current_process[cpuID]->startTime);
+					break;
+					
+				case WAITCLOCK: 
+					addokbuf("WAITCLOCK\n"); 
+					//P(pseudo_clock[cpuID], current_process[cpuID]);
+					break;
 
 				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
   					Quando invocata, la SYS8 esegue una P sul semaforo associato al device idenficato da intNo, dnume e waitForTermRead*/
-				case WAITIO: addokbuf("WAITIO\n"); break;
-			}
-		break;
+				case WAITIO: 
+					addokbuf("WAITIO\n"); 
+					//verificare se si è in attesa di I/O
+					/*if (current_process[cpuID]->p_s.reg_a1 == INT_TIMER || INT_LOWEST || INT_DISK || INT_TAPE || 
+						INT_UNUSED || INT_PRINTER || INT_TERMINAL) {
+
+						int devNumber = current_process[cpuID]->p_s.reg_a2;
+
+						switch(current_process[cpuID]->p_s.reg_a3){
+							case 0:
+							addokbuf("in scrittura\n");
+							current_process[cpuID]->p_s.reg_v0 = deviceResponseWrite[current->p_s.reg_a2];
+							break;
+
+							case 1:
+							addokbuf("in lettura\n");
+							current_process[cpuID]->p_s.reg_v0 = deviceResponseRead[current->p_s.reg_a2];
+							break;
+
+						}
+						P(devNumber,current_process[cpuID]);*/
+					break;
+			} 
+			break;
 		case EXC_BREAKPOINT: addokbuf("BREAKPOINT\n"); break;
-	}
+	}	
 	sysBp_old->pc_epc += 4; 
 	LDST(sysBp_old); 
 }

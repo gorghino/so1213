@@ -17,11 +17,18 @@ typedef struct pcb_t {
 	state_t	p_s;
 
 	/* process priority */
-	int	priority;
+	int	priority;  
 	int static_priority;
 
 	/* key of the semaphore on which the process is eventually blocked */
 	int	*p_semkey;
+
+	/*Tempo di inizio esecuzione*/
+	int startTime;
+
+	//stati array
+	
+	state_t*			states_array[6];
 
 } pcb_t;
 
