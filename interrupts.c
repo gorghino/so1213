@@ -71,7 +71,6 @@ void interruptHandler(){
 	if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
 		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
 		itoa(*terminaldevice, buffer, 10);
-	    
-
+		addokbuf(buffer);
 	}
 }
