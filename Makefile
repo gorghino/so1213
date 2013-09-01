@@ -36,7 +36,7 @@ kernel.core.umps: kernel
 	umps2-elf2umps -k kernel
 
 kernel: scheduler.o interrupts.o handler.o main.o print.o utils.o pcb.o asl.o p2test.o 
-	mipsel-linux-ld -T /usr/share/umps2/elf32ltsmip.h.umpscore.x /usr/lib/umps2/crtso.o main.o scheduler.o interrupts.o handler.o asl.o pcb.o print.o utils.o p2test.o /usr/lib/umps2/libumps.o -o kernel
+	mipsel-linux-ld -T /usr/local/share/umps2/elf32ltsmip.h.umpscore.x /usr/local/lib/umps2/crtso.o main.o scheduler.o interrupts.o handler.o asl.o pcb.o print.o utils.o p2test.o /usr/local/lib/umps2/libumps.o -o kernel
 
 main.o: main.c main.h scheduler.h interrupts.h pcb.e asl.e const13.h const13_customized.h uMPStypes.h types13.h libumps.h
 	mipsel-linux-gcc -pedantic -Wall -c main.c
