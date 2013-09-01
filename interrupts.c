@@ -29,8 +29,9 @@ extern void addokbuf(char *strp);
 
 void interruptHandler(){
   char buffer[1024];
-  
   int cause=getCAUSE();
+  termreg_t *DEVREG;
+  
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {
@@ -38,39 +39,63 @@ void interruptHandler(){
 	}
 	
 	/* Processor Local Timer */
-	if(CAUSE_IP_GET(cause, 1)) {
+	else if(CAUSE_IP_GET(cause, 1)) {
 	  itoa(1, buffer, 10);
 	}
 	
 	/* Bus (Interval Timer) */
-	if(CAUSE_IP_GET(cause, INT_TIMER)) {
-	  itoa(2, buffer, 10);
+	else if(CAUSE_IP_GET(cause, INT_TIMER)) {
+		itoa(INT_TIMER, buffer, 10);
 	}
 	
 	/* Disk Devices */
-	if(CAUSE_IP_GET(cause, INT_DISK)) {
-	  itoa(3, buffer, 10);
+	else if(CAUSE_IP_GET(cause, INT_DISK)) {
+		int* diskdevice=(memaddr)INT_BITMAP_DISKDEVICE;
+		itoa(*diskdevice, buffer, 10);
+		addokbuf(buffer);
 	}
 	
 	/* Tape Devices */
-	if(CAUSE_IP_GET(cause, INT_TAPE)) {
-	  itoa(4, buffer, 10);
+	else if(CAUSE_IP_GET(cause, INT_TAPE)) {
+		int* tapdevice=(memaddr)INT_BITMAP_TAPEDEVICE;
+		itoa(*tapdevice, buffer, 10);
+		addokbuf(buffer);
 	}
 	
 	/* Network (Ethernet) Devices */
-	if(CAUSE_IP_GET(cause, INT_UNUSED)) {
-	  itoa(5, buffer, 10);
+	else if(CAUSE_IP_GET(cause, INT_UNUSED)) {
+		int* netdevice=(memaddr)INT_BITMAP_NETDEVICE;
+		itoa(*netdevice, buffer, 10);
+		addokbuf(buffer);
 	}
 	
 	/* Printer Devices */
-	if(CAUSE_IP_GET(cause, INT_PRINTER)) {
-	  itoa(6, buffer, 10);
+	else if(CAUSE_IP_GET(cause, INT_PRINTER)) {
+		int* printdevice=(memaddr)INT_BITMAP_PRINTERDEVICE;
+		itoa(*printdevice, buffer, 10);
+		addokbuf(buffer);
 	}
 	
 	/* Terminal Devices */
-	if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
+	else if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
 		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
 		itoa(*terminaldevice, buffer, 10);
+		addokbuf("Terminal\n");
+		addokbuf(buffer);
+		addokbuf("\n");
+		itoa(CAUSE_EXCCODE_GET(cause), buffer, 10);
+		addokbuf("Line\n");
+		addokbuf(buffer);
+		addokbuf("\n");
+		itoa(CAUSE_CE_GET(cause), buffer, 10);
+		addokbuf("Coprocessor\n");
+		addokbuf(buffer);
+		addokbuf("\n");
+		DEVREG = (memaddr)DEV_REG(INT_TERMINAL);
+		itoa(DEVREG->recv_command, buffer, 10);
+		addokbuf(buffer);
+		DEVREG->recv_command = (U32)DEV_C_ACK;
+		itoa(DEVREG->recv_command, buffer, 10);
 		addokbuf(buffer);
 	}
 }
