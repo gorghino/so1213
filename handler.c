@@ -32,6 +32,7 @@
 #include "const13.h"
 #include "uMPStypes.h"
 #include "asl.e"
+#include "utils.c"
 
  #define	MAX_CPUS 1
 
@@ -58,14 +59,16 @@ void syscallHandler(){
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
 	pcb_t *unblocked;
+	pcb_t *child;
+	state_t *child_state;
+	int *semV = (int*) sysBp_old->reg_a1;
+	int *semP = (int *) sysBp_old->reg_a1;
 	switch(cause){
 		case EXC_SYSCALL: 
 			addokbuf("SYSCALL\n"); 
 			switch(sysBp_old->reg_a0){
 				case CREATEPROCESS: 
 					addokbuf("CREATEPROCESS\n"); 
-					state_t *child_state;
-					pcb_t *child;
 					/*a1 should contain the physical address of a processor state
 					area at the time this instruction is executed.
 					This processor state should be used
@@ -98,23 +101,21 @@ void syscallHandler(){
 
 				case VERHOGEN: 
 					addokbuf("VERHOGEN\n"); 
-					int *semV = (int*) sysBp_old->reg_a1;
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
-					if ((unblocked = removeBlocked (sysBp_old->reg_a1)) != NULL){
+					if ((unblocked = removeBlocked (semV)) != NULL){
 						softBlock_count[cpuID]--;
-						insertProcQ(&ready_queue, unblocked);
+						insertProcQ(ready_queue, unblocked);
 					}
 					break;
 
 				case PASSEREN: 
 					addokbuf("PASSEREN\n"); 
-					int *semP = (int *) sysBp_old->reg_a1;
 					(*semP)--;
 					if(*semP < 0){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
 						softBlock_count[cpuID]++;
-						insertBlocked(semP, current_process);
+						insertBlocked(semP, current_process[cpuID]);
 					}
 					break;
 
@@ -150,7 +151,7 @@ void syscallHandler(){
 					
 				case WAITCLOCK: 
 					addokbuf("WAITCLOCK\n"); 
-					P(pseudo_clock[cpuID], current_process[cpuID]);
+					P((int*) SCHED_PSEUDO_CLOCK, current_process[cpuID]);
 					break;
 
 				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
@@ -175,7 +176,7 @@ void syscallHandler(){
 							break;
 
 						}
-						P(devNumber,current_process[cpuID]);
+						P((int*) devNumber,current_process[cpuID]);
 					break;
 			} 
 			break;
