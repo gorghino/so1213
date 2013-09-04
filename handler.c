@@ -32,7 +32,7 @@
 #include "const13.h"
 #include "uMPStypes.h"
 #include "asl.e"
-#include "utils.c"
+#include "utils.h"
 
  #define	MAX_CPUS 1
 
