@@ -30,8 +30,6 @@ extern void addokbuf(char *strp);
 void interruptHandler(){
   char buffer[1024];
   int cause=getCAUSE();
-  termreg_t *DEVREG;
-  
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {
@@ -91,7 +89,7 @@ void interruptHandler(){
 		addokbuf("Coprocessor\n");
 		addokbuf(buffer);
 		addokbuf("\n");
-		DEVREG = (memaddr)DEV_REG(INT_TERMINAL);
+		termreg_t *DEVREG = (memaddr)DEV_REG(INT_TERMINAL);
 		itoa(DEVREG->recv_command, buffer, 10);
 		addokbuf(buffer);
 		DEVREG->recv_command = (U32)DEV_C_ACK;

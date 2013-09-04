@@ -167,12 +167,12 @@ void syscallHandler(){
 						switch(current_process[cpuID]->p_s.reg_a3){
 							case 0:
 							addokbuf("in scrittura\n");
-							current_process[cpuID]->p_s.reg_v0 = deviceResponseWrite[current_process[cpuID]->p_s.reg_a2];
+							/* current_process[cpuID]->p_s.reg_v0 = deviceResponseWrite[current_process[cpuID]->p_s.reg_a2]; */
 							break;
 
 							case 1:
 							addokbuf("in lettura\n");
-							current_process[cpuID]->p_s.reg_v0 = deviceResponseRead[current_process[cpuID]->p_s.reg_a2];
+							/* current_process[cpuID]->p_s.reg_v0 = deviceResponseRead[current_process[cpuID]->p_s.reg_a2]; */
 							break;
 
 						}
