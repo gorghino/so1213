@@ -21,4 +21,3 @@ typedef signed char S8;
 
 typedef unsigned int memaddr;
 #endif
-

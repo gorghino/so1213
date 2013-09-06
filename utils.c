@@ -164,7 +164,7 @@ void itoa(int value, char* str, int base) {
 } 
 
 
-void finddevice(bitmap, device_n) {
+void finddevicenumber(bitmap, device_n) {
   device_n = 0;
   
   while (bitmap > 1) {

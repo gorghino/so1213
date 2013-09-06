@@ -98,9 +98,12 @@ void interruptHandler(){
 		itoa(DEVREG->recv_command, buffer, 10);
 		addokbuf(buffer);*/
 		
-		int *device_n;
-		finddevice((memaddr *)INT_BITMAP_TERMINALDEVICE, device_n);
-		itoa(*device_n, buffer, 10);
+		int devicenumber;
+		finddevicenumber(INT_BITMAP_TERMINALDEVICE, devicenumber);
+		
+		addokbuf("Device register");
+		itoa(DEV_REG(INT_TERMINAL, devicenumber), buffer, 16);
 		addokbuf(buffer);
+		addokbuf("\n");
 	}
 }
