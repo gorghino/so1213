@@ -36,34 +36,34 @@ kernel.core.umps: kernel
 	umps2-elf2umps -k kernel
 
 kernel: scheduler.o interrupts.o handler.o main.o print.o utils.o pcb.o asl.o p2test.o 
-	mipsel-linux-ld -T /usr/local/share/umps2/elf32ltsmip.h.umpscore.x /usr/local/lib/umps2/crtso.o main.o scheduler.o interrupts.o handler.o asl.o pcb.o print.o utils.o p2test.o /usr/local/lib/umps2/libumps.o -o kernel
+	mipsel-elf-ld -T /usr/local/share/umps2/elf32ltsmip.h.umpscore.x /usr/local/lib/umps2/crtso.o main.o scheduler.o interrupts.o handler.o asl.o pcb.o print.o utils.o p2test.o /usr/local/lib/umps2/libumps.o -o kernel
 
 main.o: main.c main.h scheduler.h interrupts.h pcb.e asl.e const13.h const13_customized.h uMPStypes.h types13.h libumps.h
-	mipsel-linux-gcc -pedantic -Wall -c main.c
+	mipsel-elf-gcc -pedantic -Wall -c main.c
 
 scheduler.o: scheduler.c scheduler.h const13.h
-	mipsel-linux-gcc -pedantic -Wall -c scheduler.c
+	mipsel-elf-gcc -pedantic -Wall -c scheduler.c
 
 interrupts.o: interrupts.c interrupts.h 
-	mipsel-linux-gcc -pedantic -Wall -c interrupts.c
+	mipsel-elf-gcc -pedantic -Wall -c interrupts.c
 
 handler.o: handler.c handler.h
-	mipsel-linux-gcc -pedantic -Wall -c handler.c
+	mipsel-elf-gcc -pedantic -Wall -c handler.c
 
 p2test.o: p2test.c
-	mipsel-linux-gcc -pedantic -Wall -c p2test.c
+	mipsel-elf-gcc -pedantic -Wall -c p2test.c
 
 asl.o: asl.c asl.e utils.o types13.h uMPStypes.h const13.h const13_customized.h libumps.h
-	mipsel-linux-gcc -pedantic -Wall -c asl.c
+	mipsel-elf-gcc -pedantic -Wall -c asl.c
 
 pcb.o: pcb.c pcb.e utils.o types13.h uMPStypes.h const13.h const13_customized.h libumps.h
-	mipsel-linux-gcc -pedantic -Wall -c pcb.c
+	mipsel-elf-gcc -pedantic -Wall -c pcb.c
 
 print.o: print.c const13.h uMPStypes.h types13.h libumps.h
-	mipsel-linux-gcc -pedantic -Wall -c print.c
+	mipsel-elf-gcc -pedantic -Wall -c print.c
 
 utils.o: utils.c utils.h
-	mipsel-linux-gcc -pedantic -Wall -c utils.c
+	mipsel-elf-gcc -pedantic -Wall -c utils.c
 
 clean:
 	rm -f *.o term*.umps kernel

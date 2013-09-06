@@ -163,3 +163,12 @@ void itoa(int value, char* str, int base) {
         strreverse(str,wstr-1);
 } 
 
+
+void finddevice(bitmap, int* device_n) {
+  device_n = 0;
+  
+  while (bitmap > 1) {
+    device_n++;
+    bitmap >>= 1;
+  }
+}
