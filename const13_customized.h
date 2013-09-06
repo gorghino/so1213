@@ -14,4 +14,7 @@
 #define INT_BITMAP_TERMINALDEVICE 0x1000004C
 
 /* Devices registers addresses  */
-#define DEV_REG(i) (DEV_REGS_START + DEV_REG_SIZE * (i - 1))
+#define DEV_REG(int_n, dev_n) (DEV_REGS_START + ((int_n - 3) * 0x80) + (dev_n * 0x10))
+
+
+
