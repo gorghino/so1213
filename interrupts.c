@@ -105,5 +105,6 @@ void interruptHandler(){
 		itoa(DEV_REG(INT_TERMINAL, devicenumber), buffer, 16);
 		addokbuf(buffer);
 		addokbuf("\n");
+		*TERMINAL_SEND_ACK(INT_TERMINAL, devicenumber) = DEV_C_ACK;
 	}
 }
