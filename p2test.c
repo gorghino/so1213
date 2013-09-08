@@ -33,10 +33,11 @@
 
 #include "const13.h"
 #include "types13.h"
-
+#include "utils.h"
 #include "libumps.h"
  
 extern void addokbuf(char *strp);
+extern void pota_debug();
 typedef unsigned int devregtr;
 
 typedef U32 cpu_t;
@@ -153,8 +154,8 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
-
-	//addokbuf("Test() chiamato\n");
+	pota_debug();
+	addokbuf("Test() chiamato\n");
 
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
@@ -163,7 +164,7 @@ void test() {
 	else if(!testsem)
 		addokbuf("Semaforo incrementato chiamata\n");*/
 	
-	//addokbuf("Syscall chiamata\n");
+	addokbuf("Syscall chiamata\n");
 
 	print("p1 v(testsem)\n");
 

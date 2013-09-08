@@ -100,7 +100,7 @@ void schedule(){
 		}
 
 		if(!process_count[cpuID]){
-			addokbuf("Spengo\n");
+			//addokbuf("Spengo\n");
 			HALT();
 		}		
 	}
@@ -116,7 +116,7 @@ void init(){
 			
 	int cpuID = getPRID();
 	for (i = 0; i < MAX_CPUS; i++) {
-		addokbuf("Accendo CPU\n");
+		//addokbuf("Accendo CPU\n");
 		scheduler[i].status &= ~(STATUS_IEc|STATUS_KUc| STATUS_VMc);
 		scheduler[i].pc_epc = scheduler[i].reg_t9 = (memaddr) schedule;
 		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i);

@@ -45,7 +45,7 @@ state_t *new_old_areas[MAX_CPUS][8];
 int main(){
 	int i = 0;
 
-    addokbuf("Popolo le aree\n");
+    //addokbuf("Popolo le aree\n");
     /*Populate the four New Areas in the ROM Reserved Frame. (See Section
 		3.2.2-pops.) For each New processor state*/ 
     for (i=0; i<MAX_CPUS;i++){
@@ -106,14 +106,14 @@ int main(){
 
 
     /*Initialize the Level 2 (phase 1 - see Chapter 2) data structures:*/
-    addokbuf("Inizializzo liste fase1\n");
+    //addokbuf("Inizializzo liste fase1\n");
     initPcbs();
     initASL();
 
 
     /*Initialize all nucleus maintained variables: Process Count, Soft-block Count,
 		Ready Queue, and Current Process.*/
-	addokbuf("Inizializzo strutture dati\n");
+	//addokbuf("Inizializzo strutture dati\n");
 	
 	for (i=0; i<MAX_CPUS;i++){
     	ready_queue[i] = NULL; /*Puntatore alla testa della ready Queue*/
@@ -127,7 +127,7 @@ int main(){
 		actually two independent sub-devices (see Section 5.7pops), the nucleus maintains 
 		two semaphores for each terminal device. All of these semaphores need to be initialized to zero.*/
 
-	addokbuf("Inizializzo semafori\n");
+	//addokbuf("Inizializzo semafori\n");
 	int sem_disk[8];
 	int sem_tape[8];
 	int sem_ethernet[8];

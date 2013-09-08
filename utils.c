@@ -170,3 +170,7 @@ void finddevicenumber(memaddr bitmap, int* device_n) {
   }
 
 }
+
+void pota_debug(){
+	return;
+}
