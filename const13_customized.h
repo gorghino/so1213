@@ -27,7 +27,7 @@
 
 /* Devices registers addresses  */
 #define DEV_REG(int_n, dev_n) (DEV_REGS_START + ((int_n - 3) * 0x80) + (dev_n * 0x10))
-#define TERMINAL_SEND_ACK(int_n, dev_n) (memaddr*)(DEV_REG(int_n, dev_n) + RECV_STATUS)
+#define TERMINAL_SEND_ACK(int_n, dev_n) (memaddr*)(DEV_REG(int_n, dev_n) + TRANSM_COMMAND)
 
 
 
