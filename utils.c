@@ -21,17 +21,14 @@
 #include "utils.h"
 #include "p1test.h"
 
-#define TRUE 1
-#define FALSE 0
-#define	MAX_CPUS 1
-
 
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int process_count[MAX_CPUS];
 extern int softBlock_count[MAX_CPUS];
 
-
+unsigned int device_read_response[DEV_PER_INT];
+unsigned int device_write_response[DEV_PER_INT];
 
 /*insertPCBList inserisce il pcb puntato da pcb_elem nella lista puntata da pcblist_p*/
 void insertPCBList(pcb_t **pcblist_p, pcb_t *pcb_elem){
@@ -164,11 +161,12 @@ void itoa(int value, char* str, int base) {
 } 
 
 
-void finddevicenumber(bitmap, device_n) {
-  device_n = 0;
+void finddevicenumber(memaddr bitmap, int* device_n) {
+  *device_n = 0;
   
   while (bitmap > 1) {
-    device_n++;
+    (*device_n)++;
     bitmap >>= 1;
   }
+
 }

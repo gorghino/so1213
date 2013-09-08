@@ -78,17 +78,17 @@ void interruptHandler(){
 	/* Terminal Devices */
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
 		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
-		itoa(*terminaldevice, buffer, 10);
+		//itoa(*terminaldevice, buffer, 10);
 		addokbuf("Terminal\n");
-		addokbuf(buffer);
+		//addokbuf(buffer);
 		addokbuf("\n");
-		itoa(CAUSE_EXCCODE_GET(cause), buffer, 10);
+		//itoa(CAUSE_EXCCODE_GET(cause), buffer, 10);
 		addokbuf("Line\n");
-		addokbuf(buffer);
+		//addokbuf(buffer);
 		addokbuf("\n");
-		itoa(CAUSE_CE_GET(cause), buffer, 10);
+		//itoa(CAUSE_CE_GET(cause), buffer, 10);
 		addokbuf("Coprocessor\n");
-		addokbuf(buffer);
+		//addokbuf(buffer);
 		addokbuf("\n");
 		/*
 		DEVREG = (termreg_t *)DEV_REG(INT_TERMINAL);
@@ -99,12 +99,22 @@ void interruptHandler(){
 		addokbuf(buffer);*/
 		
 		int devicenumber;
-		finddevicenumber(INT_BITMAP_TERMINALDEVICE, devicenumber);
+		finddevicenumber(INT_BITMAP_TERMINALDEVICE, &devicenumber);
+
 		
-		addokbuf("Device register");
-		itoa(DEV_REG(INT_TERMINAL, devicenumber), buffer, 16);
+		addokbuf("Device register\n");
+		itoa(devicenumber, buffer, 10);
 		addokbuf(buffer);
 		addokbuf("\n");
-		*TERMINAL_SEND_ACK(INT_TERMINAL, devicenumber) = DEV_C_ACK;
+		if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
+			*TERMINAL_RECV_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
+			device_read_response[devicenumber] = TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
+		}
+
+		if((*TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY){
+			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
+			device_write_response[devicenumber] = TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
+		}
 	}
+	return;
 }
