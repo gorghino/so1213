@@ -24,13 +24,18 @@
 #include "const13.h"
 #include "const13_customized.h"
 #include "uMPStypes.h"
+#include "pcb.e"
 
 extern void addokbuf(char *strp);
+extern pcb_t *current_process[MAX_CPUS];
+extern pcb_t *ready_queue[MAX_CPUS];
 
 void interruptHandler(){
-  char buffer[1024];
-  int cause=getCAUSE();
-  termreg_t *DEVREG; 
+	char buffer[1024];
+	int cause=getCAUSE();
+	termreg_t *DEVREG;
+
+	int processor_id = getPRID(); 
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {
@@ -115,6 +120,15 @@ void interruptHandler(){
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
 			device_write_response[devicenumber] = TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
 		}
+
+		if(current_process[processor_id])
+			current_process[processor_id] = (state_t*)INT_OLDAREA;
+			/*if (processor_id > 0)
+				copyState((&HEADER_AREAS[prid][CPU_INT_OLDAREA_INDEX]),(&current->p_s));
+			else
+				copyState((),(&current->p_s));*/
+			
+		insertProcQ(&ready_queue[processor_id], current_process);
 	}
-	return;
+	LDST(current_process[processor_id]);
 }
