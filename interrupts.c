@@ -108,8 +108,8 @@ void interruptHandler(){
 
 		
 		//addokbuf("Device register\n");
-		itoa(devicenumber, buffer, 10);
-		addokbuf(buffer);
+		//itoa(devicenumber, buffer, 10);
+		//addokbuf(buffer);
 		//addokbuf("\n");
 		if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
 			*TERMINAL_RECV_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;

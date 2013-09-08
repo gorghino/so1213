@@ -154,8 +154,8 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
-	pota_debug();
-	addokbuf("Test() chiamato\n");
+	
+	//addokbuf("Test() chiamato\n");
 
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
@@ -164,10 +164,10 @@ void test() {
 	else if(!testsem)
 		addokbuf("Semaforo incrementato chiamata\n");*/
 	
-	addokbuf("Syscall chiamata\n");
+	//addokbuf("Syscall chiamata\n");
 
 	print("p1 v(testsem)\n");
-
+	pota_debug();
 	/* set up states of the other processes */
 
 	/* set up p2's state */

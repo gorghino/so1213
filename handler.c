@@ -65,10 +65,10 @@ void syscallHandler(){
 	int *semP = (int *) sysBp_old->reg_a1;
 	switch(cause){
 		case EXC_SYSCALL: 
-			addokbuf("SYSCALL\n"); 
+			//addokbuf("SYSCALL\n"); 
 			switch(sysBp_old->reg_a0){
 				case CREATEPROCESS: 
-					addokbuf("CREATEPROCESS\n"); 
+					//addokbuf("CREATEPROCESS\n"); 
 					/*a1 should contain the physical address of a processor state
 					area at the time this instruction is executed.
 					This processor state should be used
@@ -95,12 +95,12 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS: 
-					addokbuf("TERMINATEPROCESS\n"); 
+					//addokbuf("TERMINATEPROCESS\n"); 
 					outChildBlocked(current_process[cpuID]);					
 					break;
 
 				case VERHOGEN: 
-					addokbuf("VERHOGEN\n"); 
+					//addokbuf("VERHOGEN\n"); 
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
 					if ((unblocked = removeBlocked (semV)) != NULL){
@@ -110,7 +110,7 @@ void syscallHandler(){
 					break;
 
 				case PASSEREN: 
-					addokbuf("PASSEREN\n"); 
+					//addokbuf("PASSEREN\n"); 
 					(*semP)--;
 					if(*semP < 0){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
@@ -120,7 +120,7 @@ void syscallHandler(){
 					break;
 
 				case SPECTRAPVEC: 
-					addokbuf("SPECTRAPVEC\n"); 
+					//addokbuf("SPECTRAPVEC\n"); 
 					/*nel registro a1 ho il tipo di eccezione e da li ho 3 casi. (TLB exceptions, PGMTRAP e SysBp).
 					Nella struttura pcb abbiamo un array [0-5] dove vengono salvati gli stati del processore.
 					Nei reg_a3 abbiamo i NEW (da utilizzare nel caso si verifichino exceptions o PGMTRAP) 
@@ -145,19 +145,19 @@ void syscallHandler(){
 					break;
                     
 				case GETCPUTIME: 
-					addokbuf("GETCPUTIME\n"); 
+					//addokbuf("GETCPUTIME\n"); 
 					current_process[cpuID]->p_s.reg_v0 = (GET_TODLOW - current_process[cpuID]->startTime);
 					break;
 					
 				case WAITCLOCK: 
-					addokbuf("WAITCLOCK\n"); 
+					//addokbuf("WAITCLOCK\n"); 
 					P((int*) SCHED_PSEUDO_CLOCK, current_process[cpuID]);
 					break;
 
 				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
   					Quando invocata, la SYS8 esegue una P sul semaforo associato al device idenficato da intNo, dnume e waitForTermRead*/
 				case WAITIO: 
-					addokbuf("WAITIO\n"); 
+					//addokbuf("WAITIO\n"); 
 					/*verificare se si è in attesa di I/O*/
 					if (current_process[cpuID]->p_s.reg_a1 == INT_TIMER || INT_LOWEST || INT_DISK || INT_TAPE || 
 						INT_UNUSED || INT_PRINTER || INT_TERMINAL) {
@@ -166,12 +166,12 @@ void syscallHandler(){
 
 						switch(current_process[cpuID]->p_s.reg_a3){
 							case 0:
-							addokbuf("in scrittura\n");
+							//addokbuf("in scrittura\n");
 							/* current_process[cpuID]->p_s.reg_v0 = deviceResponseWrite[current_process[cpuID]->p_s.reg_a2]; */
 							break;
 
 							case 1:
-							addokbuf("in lettura\n");
+							//addokbuf("in lettura\n");
 							/* current_process[cpuID]->p_s.reg_v0 = deviceResponseRead[current_process[cpuID]->p_s.reg_a2]; */
 							break;
 
@@ -182,7 +182,7 @@ void syscallHandler(){
 			break;
 		
 		}	
-	case EXC_BREAKPOINT: addokbuf("BREAKPOINT\n"); break;
+	case EXC_BREAKPOINT: //addokbuf("BREAKPOINT\n"); break;
 	}
 
 	sysBp_old->pc_epc += 4; 
