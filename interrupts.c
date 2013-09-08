@@ -82,6 +82,7 @@ void interruptHandler(){
 	
 	/* Terminal Devices */
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
+		pota_debug2();
 		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
 		//itoa(*terminaldevice, buffer, 10);
 		//addokbuf("Terminal\n");
@@ -130,5 +131,6 @@ void interruptHandler(){
 			
 		insertProcQ(&ready_queue[processor_id], current_process);
 	}
+
 	LDST(current_process[processor_id]);
 }

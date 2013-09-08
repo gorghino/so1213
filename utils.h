@@ -25,3 +25,4 @@ void insertSibling(pcb_t *firstchild, pcb_t *p);
 void strreverse();
 void itoa();
 void pota_debug();
+void pota_debug2();

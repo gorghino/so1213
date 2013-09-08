@@ -38,6 +38,7 @@
  
 extern void addokbuf(char *strp);
 extern void pota_debug();
+extern void pota_debug2();
 typedef unsigned int devregtr;
 
 typedef U32 cpu_t;
@@ -167,7 +168,6 @@ void test() {
 	//addokbuf("Syscall chiamata\n");
 
 	print("p1 v(testsem)\n");
-	pota_debug();
 	/* set up states of the other processes */
 
 	/* set up p2's state */

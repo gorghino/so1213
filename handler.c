@@ -56,6 +56,7 @@ void trapHandler(){
 }
 
 void syscallHandler(){
+	pota_debug();
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
 	pcb_t *unblocked;
@@ -167,12 +168,13 @@ void syscallHandler(){
 						switch(current_process[cpuID]->p_s.reg_a3){
 							case 0:
 							//addokbuf("in scrittura\n");
-							/* current_process[cpuID]->p_s.reg_v0 = deviceResponseWrite[current_process[cpuID]->p_s.reg_a2]; */
+
+							current_process[cpuID]->p_s.reg_v0 = device_write_response[current_process[cpuID]->p_s.reg_a2];
 							break;
 
 							case 1:
 							//addokbuf("in lettura\n");
-							/* current_process[cpuID]->p_s.reg_v0 = deviceResponseRead[current_process[cpuID]->p_s.reg_a2]; */
+							current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];
 							break;
 
 						}
@@ -182,8 +184,9 @@ void syscallHandler(){
 			break;
 		
 		}	
-	case EXC_BREAKPOINT: //addokbuf("BREAKPOINT\n"); break;
+	case EXC_BREAKPOINT: /*addokbuf("BREAKPOINT\n");*/ break;
 	}
+
 
 	sysBp_old->pc_epc += 4; 
 	LDST(sysBp_old); 
