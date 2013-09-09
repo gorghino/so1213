@@ -19,7 +19,6 @@
  */
 
 #include "main.h"
-#include "scheduler.h"
 #include "handler.h"
 #include "pcb.e"
 #include "asl.e"

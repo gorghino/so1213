@@ -22,15 +22,18 @@
 #include "utils.h"
 #include "libumps.h"
 #include "const13.h"
-#include "const13_customized.h"
 #include "uMPStypes.h"
 #include "pcb.e"
+#include "const13_customized.h"
+#include "scheduler.h"
 
 extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 
+
 void interruptHandler(){
+
 	char buffer[1024];
 	int cause=getCAUSE();
 	termreg_t *DEVREG;
@@ -39,11 +42,13 @@ void interruptHandler(){
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {
+		HALT();
 	  itoa(0, buffer, 10);
 	}
 	
 	/* Processor Local Timer */
 	else if(CAUSE_IP_GET(cause, 1)) {
+		HALT();
 	  itoa(1, buffer, 10);
 	}
 	
@@ -82,7 +87,7 @@ void interruptHandler(){
 	
 	/* Terminal Devices */
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
-		pota_debug2();
+
 		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
 		//itoa(*terminaldevice, buffer, 10);
 		//addokbuf("Terminal\n");
@@ -122,15 +127,13 @@ void interruptHandler(){
 			device_write_response[devicenumber] = TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
 		}
 
-		if(current_process[processor_id])
-			current_process[processor_id] = (state_t*)INT_OLDAREA;
+		if(current_process[processor_id]){
+			copyState( ((state_t*)INT_OLDAREA), &(current_process[processor_id]->p_s));
 			/*if (processor_id > 0)
-				copyState((&HEADER_AREAS[prid][CPU_INT_OLDAREA_INDEX]),(&current->p_s));
-			else
-				copyState((),(&current->p_s));*/
-			
-		insertProcQ(&ready_queue[processor_id], current_process);
+				copyState((&HEADER_AREAS[prid][CPU_INT_OLDAREA_INDEX]),(&current->p_s));*/	
+			insertProcQ(&ready_queue[processor_id], current_process[processor_id]);
+		}
 	}
 
-	LDST(current_process[processor_id]);
+	LDST(&scheduler[processor_id]);
 }

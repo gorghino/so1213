@@ -22,6 +22,9 @@ int emptyPCBList(pcb_t **pcblist_p);
 int emptySEMList(semd_t **semlist_p);
 void insertSibling(pcb_t *firstchild, pcb_t *p);
 
+void P(int *key, pcb_t *process);
+void V(int *key, pcb_t *process);
+
 void strreverse();
 void itoa();
 void pota_debug();

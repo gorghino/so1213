@@ -1,3 +1,6 @@
+#ifndef CONST_H
+#define CONST_H
+
 /**************************************************************************** 
  *
  * This header file contains the global customized constant & macro definitions.
@@ -32,6 +35,18 @@
 #define TERMINAL_TRANSM_STATUS(int_n, dev_n) (memaddr*)(DEV_REG(int_n, dev_n) + TRANSM_STATUS)
 #define TERMINAL_TRANSM_COMMAND(int_n, dev_n) (memaddr*)(DEV_REG(int_n, dev_n) + TRANSM_COMMAND)
 
+/*Macro che fa sostituisce la memcpy per gli stati*/
+#define copyState(source, dest) ({\
+	int i; for(i=0;i<29;i++)\
+		(*dest).gpr[i]=(*source).gpr[i];\
+	(*dest).entry_hi=(*source).entry_hi;\
+	(*dest).cause=(*source).cause;\
+	(*dest).status=(*source).status;\
+	(*dest).pc_epc=(*source).pc_epc;\
+	(*dest).hi=(*source).hi;\
+	(*dest).lo=(*source).lo;\
+})
 
+#endif
 
 

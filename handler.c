@@ -32,6 +32,7 @@
 #include "const13.h"
 #include "uMPStypes.h"
 #include "asl.e"
+#include "handler.h"
 #include "utils.h"
 
  #define	MAX_CPUS 1
@@ -56,7 +57,6 @@ void trapHandler(){
 }
 
 void syscallHandler(){
-	pota_debug();
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
 	pcb_t *unblocked;
@@ -165,6 +165,8 @@ void syscallHandler(){
 
 						int devNumber = current_process[cpuID]->p_s.reg_a2;
 
+						P((int*) devNumber,current_process[cpuID]);
+
 						switch(current_process[cpuID]->p_s.reg_a3){
 							case 0:
 							//addokbuf("in scrittura\n");
@@ -178,7 +180,7 @@ void syscallHandler(){
 							break;
 
 						}
-						P((int*) devNumber,current_process[cpuID]);
+						
 					break;
 			} 
 			break;
@@ -186,8 +188,6 @@ void syscallHandler(){
 		}	
 	case EXC_BREAKPOINT: /*addokbuf("BREAKPOINT\n");*/ break;
 	}
-
-
 	sysBp_old->pc_epc += 4; 
 	LDST(sysBp_old); 
 }

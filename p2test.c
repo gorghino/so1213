@@ -38,7 +38,6 @@
  
 extern void addokbuf(char *strp);
 extern void pota_debug();
-extern void pota_debug2();
 typedef unsigned int devregtr;
 
 typedef U32 cpu_t;
@@ -136,9 +135,11 @@ void print(char *msg) {
 		   actually starts the operation on the device! */
 		*(base + 3) = PRINTCHR | (((devregtr) *s) << BYTELEN);
 		
+
 		/* Wait for I/O completion (SYS8) */
 		status = SYSCALL(WAITIO, INT_TERMINAL, 0, FALSE);
 
+		HALT();
 /*		PANIC(); */
 		
 		if ((status & TERMSTATMASK) != TRANSM)
@@ -167,7 +168,8 @@ void test() {
 	
 	//addokbuf("Syscall chiamata\n");
 
-	print("p1 v(testsem)\n");
+	print("p1");
+	pota_debug();
 	/* set up states of the other processes */
 
 	/* set up p2's state */

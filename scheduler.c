@@ -20,10 +20,10 @@
 
 #include "print.h"
 #include "libumps.h"
-#include "scheduler.h"
 #include "const13.h"
 #include "pcb.e"
 #include "main.h"
+#include "scheduler.h"
 
 
  /*Your nucleus should guarantee finite progress; consequently, every ready process
@@ -53,8 +53,6 @@
 	pressly for this purpose. See Section Section 6.2-pops for more information
 	about the WAIT instruction.*/
 
-#define	MAX_CPUS 1
-
 extern void addokbuf(char *strp);
 extern void itoa();
 extern void strreverse();
@@ -66,12 +64,12 @@ extern state_t *new_old_areas[MAX_CPUS][8];
 // Conta quanti processi nella coda ready della CPU
 extern int process_count[MAX_CPUS];
 
-HIDDEN unsigned int pcb_Lock = 1;
 
-state_t scheduler[MAX_CPUS];
+HIDDEN unsigned int pcb_Lock = 1;
 
 
 void schedule(){
+	pota_debug2();
 	int cpuID = getPRID();
 	pcb_t *pRunning[MAX_CPUS];
 	//addokbuf("SCHEDULER\n");
