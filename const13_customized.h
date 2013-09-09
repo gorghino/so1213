@@ -36,7 +36,7 @@
 #define TERMINAL_TRANSM_COMMAND(int_n, dev_n) (memaddr*)(DEV_REG(int_n, dev_n) + TRANSM_COMMAND)
 
 /*Macro che fa sostituisce la memcpy per gli stati*/
-#define copyState(source, dest) ({\
+#define copyState(dest, source) ({\
 	int i; for(i=0;i<29;i++)\
 		(*dest).gpr[i]=(*source).gpr[i];\
 	(*dest).entry_hi=(*source).entry_hi;\

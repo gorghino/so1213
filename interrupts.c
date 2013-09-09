@@ -128,7 +128,7 @@ void interruptHandler(){
 		}
 
 		if(current_process[processor_id]){
-			copyState( ((state_t*)INT_OLDAREA), &(current_process[processor_id]->p_s));
+			copyState(&(current_process[processor_id]->p_s), (state_t*)INT_OLDAREA));
 			/*if (processor_id > 0)
 				copyState((&HEADER_AREAS[prid][CPU_INT_OLDAREA_INDEX]),(&current->p_s));*/	
 			insertProcQ(&ready_queue[processor_id], current_process[processor_id]);
