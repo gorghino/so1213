@@ -109,19 +109,16 @@ void P(int *key, pcb_t *process){
 	}
 }
 
-pcb_t* V(int* key){
-	int* key_pota = key;
+pcb_t* V(int* key){	
 	semd_t *semd;
 	pcb_t *unblocked;
 	char buffer[1024];
 	if((semd = getSemd(key))!=NULL){
-		pota_debug(key);
 		*(semd->s_key)++;
 		if(*(semd->s_key) >= 0){
-			unblocked = removeBlocked(key_pota);
+			unblocked = removeBlocked(key);
 			softBlock_count[getPRID()]--;
-			if(!unblocked)
-				HALT();
+
 			return unblocked;
 		}
 	}
@@ -193,6 +190,8 @@ int finddevicenumber(memaddr* bitmap) {
 }
 
 void pota_debug(int* a){
+	key_pota = 0; 
+	pota_debug2();
 	return;
 }
 

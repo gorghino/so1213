@@ -78,7 +78,6 @@ int insertBlocked(int *key, pcb_t* p){
 		semd_t *semd_target = getSemd(key);
 		if(semd_target == NULL){
 			/*Il semaforo non esiste nella ASL*/
-
 			semd_target = allocSem(); /*semd_target ora punta al SEMD tolto dalla semdFree. Se semdFree è vuota, semd_target == NULL*/
 			if (semd_target == NULL) /*Se la semdFree è vuota restituisco TRUE*/
 				return TRUE;
@@ -128,7 +127,6 @@ Se tale descrittore non esiste nella ASL, restituisce NULL.
 Altrimenti,restituisce l’elemento rimosso. 
 Se la coda dei processi bloccati per il semaforo diventa vuota, rimuove il descrittore del semaforo corrispondente dalla ASL e lo inserisce nella coda dei semafori liberi (semdFree).*/
 pcb_t* removeBlocked(int *key){
-	char buffer[1024];
 	semd_t *semd_target = getSemd(key);
 	if(semd_target){
 		/*Il semaforo è nella ASL*/

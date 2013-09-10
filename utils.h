@@ -16,6 +16,8 @@ pcb_t *pcbfree_h;
 unsigned int device_read_response[DEV_PER_INT];
 unsigned int device_write_response[DEV_PER_INT];
 
+int* key_pota;
+
 void insertPCBList(pcb_t **pcblist_p, pcb_t *pcb_elem);
 void insertSEMList(semd_t **semlist_p, semd_t *sem_elem);
 int emptyPCBList(pcb_t **pcblist_p);

@@ -35,6 +35,7 @@
 #include "handler.h"
 #include "utils.h"
 #include "main.h"
+#include "const13_customized.h"
 
  #define	MAX_CPUS 1
 
@@ -66,11 +67,13 @@ void syscallHandler(){
 	int *semV = (int*) sysBp_old->reg_a1;
 	int *semP = (int *) sysBp_old->reg_a1;
 
+	copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
+
 	char buffer[1024];
 	switch(cause){
 		case EXC_SYSCALL: 
 			//addokbuf("SYSCALL\n"); 
-			switch(sysBp_old->reg_a0){
+			switch(current_process[cpuID]->p_s.reg_a0){
 				case CREATEPROCESS: 
 					//addokbuf("CREATEPROCESS\n"); 
 					/*a1 should contain the physical address of a processor state
@@ -165,6 +168,10 @@ void syscallHandler(){
 					//addokbuf("WAITIO\n"); 
 					/*verificare se si è in attesa di I/O*/
 					if (current_process[cpuID]->p_s.reg_a1 < INT_TERMINAL) {
+						itoa(current_process[cpuID]->p_s.reg_a0, buffer, 10);
+						addokbuf(buffer);
+						addokbuf("\n");
+						pota_debug2();
 
 						int devNumber = current_process[cpuID]->p_s.reg_a2;
 						//itoa(devNumber, buffer, 10);
