@@ -30,6 +30,8 @@ semd_t *semd_h; /*Puntatore alla testa della lista dei semafori attivi (ASL)*/
 #define TRUE 1
 #define FALSE 0
 
+char buffer[1024];
+
 
 /************ Funzioni per gestire le liste di SEMafori ************/
 
@@ -126,8 +128,8 @@ Se tale descrittore non esiste nella ASL, restituisce NULL.
 Altrimenti,restituisce l’elemento rimosso. 
 Se la coda dei processi bloccati per il semaforo diventa vuota, rimuove il descrittore del semaforo corrispondente dalla ASL e lo inserisce nella coda dei semafori liberi (semdFree).*/
 pcb_t* removeBlocked(int *key){
+	char buffer[1024];
 	semd_t *semd_target = getSemd(key);
-	
 	if(semd_target){
 		/*Il semaforo è nella ASL*/
 		pcb_t *removed = removeProcQ(&(semd_target->s_procQ)); /*Rimuovo il primo PCB della sua coda di processi*/

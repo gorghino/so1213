@@ -69,7 +69,6 @@ HIDDEN unsigned int pcb_Lock = 1;
 
 
 void schedule(){
-	pota_debug2();
 	int cpuID = getPRID();
 	pcb_t *pRunning[MAX_CPUS];
 	//addokbuf("SCHEDULER\n");

@@ -34,6 +34,7 @@
 #include "asl.e"
 #include "handler.h"
 #include "utils.h"
+#include "main.h"
 
  #define	MAX_CPUS 1
 
@@ -64,6 +65,8 @@ void syscallHandler(){
 	state_t *child_state;
 	int *semV = (int*) sysBp_old->reg_a1;
 	int *semP = (int *) sysBp_old->reg_a1;
+
+	char buffer[1024];
 	switch(cause){
 		case EXC_SYSCALL: 
 			//addokbuf("SYSCALL\n"); 
@@ -106,13 +109,14 @@ void syscallHandler(){
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
 					if ((unblocked = removeBlocked (semV)) != NULL){
 						softBlock_count[cpuID]--;
-						insertProcQ(ready_queue, unblocked);
+						insertProcQ(&ready_queue[cpuID], unblocked);
 					}
 					break;
 
 				case PASSEREN: 
 					//addokbuf("PASSEREN\n"); 
-					(*semP)--;
+					if((*semP) >= 0)
+						(*semP)--;
 					if(*semP < 0){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
 						softBlock_count[cpuID]++;
@@ -160,32 +164,31 @@ void syscallHandler(){
 				case WAITIO: 
 					//addokbuf("WAITIO\n"); 
 					/*verificare se si è in attesa di I/O*/
-					if (current_process[cpuID]->p_s.reg_a1 == INT_TIMER || INT_LOWEST || INT_DISK || INT_TAPE || 
-						INT_UNUSED || INT_PRINTER || INT_TERMINAL) {
+					if (current_process[cpuID]->p_s.reg_a1 < INT_TERMINAL) {
 
 						int devNumber = current_process[cpuID]->p_s.reg_a2;
-
-						P((int*) devNumber,current_process[cpuID]);
-
-						switch(current_process[cpuID]->p_s.reg_a3){
-							case 0:
-							//addokbuf("in scrittura\n");
-
-							current_process[cpuID]->p_s.reg_v0 = device_write_response[current_process[cpuID]->p_s.reg_a2];
-							break;
-
-							case 1:
-							//addokbuf("in lettura\n");
-							current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];
-							break;
-
-						}
+						//itoa(devNumber, buffer, 10);
+						//addokbuf(buffer);		
 						
+						if(!(current_process[cpuID]->p_s.reg_a3)){
+							//Caso write
+							P(&sem_terminal_read[devNumber], current_process[cpuID]);
+							current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];
+							//itoa(current_process[cpuID]->p_s.reg_a2, buffer, 10);
+							//addokbuf("Pota\n");				
+						}					
+						else{
+							//Caso read
+							P(&sem_terminal_write[devNumber], current_process[cpuID]);
+							current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];
+							}
+
+					insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
 					break;
 			} 
 			break;
-		
-		}	
+	}
+	break;	
 	case EXC_BREAKPOINT: /*addokbuf("BREAKPOINT\n");*/ break;
 	}
 	sysBp_old->pc_epc += 4; 

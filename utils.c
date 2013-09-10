@@ -20,6 +20,7 @@
 
 #include "utils.h"
 #include "p1test.h"
+#include "asl.e"
 
 
 extern pcb_t *current_process[MAX_CPUS];
@@ -29,6 +30,8 @@ extern int softBlock_count[MAX_CPUS];
 
 unsigned int device_read_response[DEV_PER_INT];
 unsigned int device_write_response[DEV_PER_INT];
+
+
 
 /*insertPCBList inserisce il pcb puntato da pcb_elem nella lista puntata da pcblist_p*/
 void insertPCBList(pcb_t **pcblist_p, pcb_t *pcb_elem){
@@ -91,28 +94,46 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 
 void P(int *key, pcb_t *process){
 	semd_t *semd;
-	if((semd = getSemd(key))!=NULL){
-		*(semd->s_key)--;
-		if(semd->s_key < 0){
+
+	if((semd = getSemd(key))!=NULL){ 
+		if(*(semd->s_key) >= 0)
+			*(semd->s_key)--;
+		if(*(semd->s_key) < 0){
 			insertBlocked(key, process);
 			softBlock_count[getPRID()]++;
 		}
 	}
+	else{
+		insertBlocked(key, process); // Alloca il semaforo se non esiste
+		softBlock_count[getPRID()]++;
+	}
 }
 
-void V(int *key, pcb_t *process){
+pcb_t* V(int* key){
+	int* key_pota = key;
 	semd_t *semd;
+	pcb_t *unblocked;
+	char buffer[1024];
 	if((semd = getSemd(key))!=NULL){
+		pota_debug(key);
 		*(semd->s_key)++;
-		if(semd->s_key >= 0){
-			removeBlocked(key);
+		if(*(semd->s_key) >= 0){
+			unblocked = removeBlocked(key_pota);
 			softBlock_count[getPRID()]--;
+			if(!unblocked)
+				HALT();
+			return unblocked;
 		}
 	}
+	return NULL;
 
 }
 
+#define	TERM0ADDR	0x10000250
 
+int* findAddr(int lineNumber, int deviceNumber){
+	return (int*)(TERM0ADDR + lineNumber + deviceNumber);
+}  
 
 
 
@@ -161,17 +182,17 @@ void itoa(int value, char* str, int base) {
 } 
 
 
-void finddevicenumber(memaddr bitmap, int* device_n) {
-  *device_n = 0;
+int finddevicenumber(memaddr* bitmap) {
+  int device_n = 0;
   
-  while (bitmap > 1) {
-    (*device_n)++;
-    bitmap >>= 1;
+  while (*bitmap > 1) {
+    device_n++;
+    *bitmap >>= 1;
   }
-
+  return device_n;
 }
 
-void pota_debug(){
+void pota_debug(int* a){
 	return;
 }
 

@@ -23,7 +23,9 @@ int emptySEMList(semd_t **semlist_p);
 void insertSibling(pcb_t *firstchild, pcb_t *p);
 
 void P(int *key, pcb_t *process);
-void V(int *key, pcb_t *process);
+pcb_t* V(int *key);
+int* findAddr(int lineNumber, int deviceNumber);
+int finddevicenumber(memaddr* bitmap);
 
 void strreverse();
 void itoa();

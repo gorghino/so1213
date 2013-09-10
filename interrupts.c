@@ -26,6 +26,7 @@
 #include "pcb.e"
 #include "const13_customized.h"
 #include "scheduler.h"
+#include "main.h"
 
 extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];
@@ -37,8 +38,9 @@ void interruptHandler(){
 	char buffer[1024];
 	int cause=getCAUSE();
 	termreg_t *DEVREG;
+	pcb_t * unblocked;
 
-	int processor_id = getPRID(); 
+	int cpuID = getPRID(); 
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {
@@ -109,8 +111,8 @@ void interruptHandler(){
 		itoa(DEVREG->recv_command, buffer, 10);
 		addokbuf(buffer);*/
 		
-		int devicenumber;
-		finddevicenumber(INT_BITMAP_TERMINALDEVICE, &devicenumber);
+		
+		int devicenumber = finddevicenumber(INT_BITMAP_TERMINALDEVICE);
 
 		
 		//addokbuf("Device register\n");
@@ -118,22 +120,37 @@ void interruptHandler(){
 		//addokbuf(buffer);
 		//addokbuf("\n");
 		if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
+			if( (unblocked = V(&sem_terminal_write[devicenumber])) != NULL){
+				unblocked->p_s.reg_v0 = *TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
+				insertProcQ(&ready_queue[cpuID], unblocked);
+			}
+			else{
+				device_read_response[devicenumber] = *TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
+			}
+
 			*TERMINAL_RECV_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
-			device_read_response[devicenumber] = TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
 		}
 
-		if((*TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY){
+		if((*TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
+			if( (unblocked = V(&sem_terminal_read[devicenumber])) != NULL){
+				unblocked->p_s.reg_v0 = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
+				insertProcQ(&ready_queue[cpuID], unblocked);
+			}
+			else{
+				device_write_response[devicenumber] = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
+				
+			}
+
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
-			device_write_response[devicenumber] = TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
 		}
 
-		if(current_process[processor_id]){
-			copyState(&(current_process[processor_id]->p_s), (state_t*)INT_OLDAREA));
-			/*if (processor_id > 0)
+		if(current_process[cpuID]){
+			copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );
+			/*if (cpuID > 0)
 				copyState((&HEADER_AREAS[prid][CPU_INT_OLDAREA_INDEX]),(&current->p_s));*/	
-			insertProcQ(&ready_queue[processor_id], current_process[processor_id]);
+			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
 		}
 	}
 
-	LDST(&scheduler[processor_id]);
+	LDST(&scheduler[cpuID]);
 }

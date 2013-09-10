@@ -127,6 +127,7 @@ void print(char *msg) {
 	char * s = msg;
 	devregtr * base = (devregtr *) (TERM0ADDR);
 	devregtr status;
+	char buffer[1024];
 	
 	SYSCALL(PASSEREN, (int)&term_mut, 0, 0);				/* get term_mut lock */
 	
@@ -139,11 +140,10 @@ void print(char *msg) {
 		/* Wait for I/O completion (SYS8) */
 		status = SYSCALL(WAITIO, INT_TERMINAL, 0, FALSE);
 
-		HALT();
 /*		PANIC(); */
-		
-		if ((status & TERMSTATMASK) != TRANSM)
+		if ((status & TERMSTATMASK) != TRANSM){
 			PANIC();
+		}
 
 		s++;	
 	}
@@ -169,7 +169,6 @@ void test() {
 	//addokbuf("Syscall chiamata\n");
 
 	print("p1");
-	pota_debug();
 	/* set up states of the other processes */
 
 	/* set up p2's state */

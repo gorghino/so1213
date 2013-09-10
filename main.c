@@ -127,12 +127,6 @@ int main(){
 		two semaphores for each terminal device. All of these semaphores need to be initialized to zero.*/
 
 	//addokbuf("Inizializzo semafori\n");
-	int sem_disk[8];
-	int sem_tape[8];
-	int sem_ethernet[8];
-	int sem_printer[8];
-	int sem_terminal_read[8];
-	int sem_terminal_write[8];
 
 	int j = 0;
 	for(j=0;j<NUM_DEVICES;j++){
