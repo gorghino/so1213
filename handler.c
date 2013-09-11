@@ -167,12 +167,8 @@ void syscallHandler(){
 				case WAITIO: 
 					//addokbuf("WAITIO\n"); 
 					/*verificare se si è in attesa di I/O*/
-					if (current_process[cpuID]->p_s.reg_a1 < INT_TERMINAL) {
-						itoa(current_process[cpuID]->p_s.reg_a0, buffer, 10);
-						addokbuf(buffer);
-						addokbuf("\n");
-						pota_debug2();
-
+					if (current_process[cpuID]->p_s.reg_a1 <= INT_TERMINAL) {
+						
 						int devNumber = current_process[cpuID]->p_s.reg_a2;
 						//itoa(devNumber, buffer, 10);
 						//addokbuf(buffer);		
@@ -182,13 +178,13 @@ void syscallHandler(){
 							P(&sem_terminal_read[devNumber], current_process[cpuID]);
 							current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];
 							//itoa(current_process[cpuID]->p_s.reg_a2, buffer, 10);
-							//addokbuf("Pota\n");				
+							//addokbuf("Pota\n");			
 						}					
 						else{
 							//Caso read
 							P(&sem_terminal_write[devNumber], current_process[cpuID]);
 							current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];
-							}
+						}
 
 					insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
 					break;

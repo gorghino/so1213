@@ -49,42 +49,45 @@ void interruptHandler(){
 	}
 	
 	/* Processor Local Timer */
+	/*The processor Local Timer is useful for generating interrupts*/
 	else if(CAUSE_IP_GET(cause, 1)) {
 		HALT();
-	  itoa(1, buffer, 10);
+	  //itoa(1, buffer, 10);
 	}
 	
 	/* Bus (Interval Timer) */
+	/*For Interval Timer interrupts that represent a pseudo-clock tick (see Section 3.7.1), perform the V 
+	operation on the nucleus maintained pseudo-clock timer semaphore.*/
 	else if(CAUSE_IP_GET(cause, INT_TIMER)) {
-		itoa(INT_TIMER, buffer, 10);
+		//itoa(INT_TIMER, buffer, 10);
 	}
 	
 	/* Disk Devices */
 	else if(CAUSE_IP_GET(cause, INT_DISK)) {
 		int* diskdevice=(memaddr)INT_BITMAP_DISKDEVICE;
-		itoa(*diskdevice, buffer, 10);
-		addokbuf(buffer);
+		/*itoa(*diskdevice, buffer, 10);
+		addokbuf(buffer);*/
 	}
 	
 	/* Tape Devices */
 	else if(CAUSE_IP_GET(cause, INT_TAPE)) {
 		int* tapdevice=(memaddr)INT_BITMAP_TAPEDEVICE;
-		itoa(*tapdevice, buffer, 10);
-		addokbuf(buffer);
+		/*itoa(*tapdevice, buffer, 10);
+		addokbuf(buffer);*/
 	}
 	
 	/* Network (Ethernet) Devices */
 	else if(CAUSE_IP_GET(cause, INT_UNUSED)) {
 		int* netdevice=(memaddr)INT_BITMAP_NETDEVICE;
-		itoa(*netdevice, buffer, 10);
-		addokbuf(buffer);
+		/*itoa(*netdevice, buffer, 10);
+		addokbuf(buffer);*/
 	}
 	
 	/* Printer Devices */
 	else if(CAUSE_IP_GET(cause, INT_PRINTER)) {
 		int* printdevice=(memaddr)INT_BITMAP_PRINTERDEVICE;
-		itoa(*printdevice, buffer, 10);
-		addokbuf(buffer);
+		/*itoa(*printdevice, buffer, 10);
+		addokbuf(buffer);*/
 	}
 	
 	/* Terminal Devices */
@@ -133,22 +136,26 @@ void interruptHandler(){
 
 		if((*TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
 			if( (unblocked = V(&sem_terminal_read[devicenumber])) != NULL){
+
 				unblocked->p_s.reg_v0 = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
 				insertProcQ(&ready_queue[cpuID], unblocked);
+
 			}
 			else{
 				device_write_response[devicenumber] = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
 				
 			}
-
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
 		}
 
 		if(current_process[cpuID]){
-			copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );
+
+			copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );	
 			/*if (cpuID > 0)
 				copyState((&HEADER_AREAS[prid][CPU_INT_OLDAREA_INDEX]),(&current->p_s));*/	
 			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
+			HALT();
+
 		}
 	}
 

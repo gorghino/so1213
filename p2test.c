@@ -139,13 +139,14 @@ void print(char *msg) {
 
 		/* Wait for I/O completion (SYS8) */
 		status = SYSCALL(WAITIO, INT_TERMINAL, 0, FALSE);
-		
+
 /*		PANIC(); */
 		if ((status & TERMSTATMASK) != TRANSM){
 			PANIC();
 		}
 		
 		s++;	
+
 	}
 	
 	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* release term_mut */
@@ -159,7 +160,7 @@ void test() {
 	
 	//addokbuf("Test() chiamato\n");
 
-	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+	//SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
 	/*if(testsem)
 		addokbuf("Semaforo incrementato\n");

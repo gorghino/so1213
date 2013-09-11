@@ -94,11 +94,10 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 
 void P(int *key, pcb_t *process){
 	semd_t *semd;
-
-	if((semd = getSemd(key))!=NULL){ 
-		if(*(semd->s_key) >= 0)
+	if((semd = getSemd(key))!=NULL){
+		if((*semd->s_key) >= 0)
 			*(semd->s_key)--;
-		if(*(semd->s_key) < 0){
+		if((*semd->s_key) < 0){
 			insertBlocked(key, process);
 			softBlock_count[getPRID()]++;
 		}
@@ -114,11 +113,11 @@ pcb_t* V(int* key){
 	pcb_t *unblocked;
 	char buffer[1024];
 	if((semd = getSemd(key))!=NULL){
-		*(semd->s_key)++;
-		if(*(semd->s_key) >= 0){
+		pota_debug(key);
+		(*semd->s_key)++;
+		if((*semd->s_key) >= 0){
 			unblocked = removeBlocked(key);
 			softBlock_count[getPRID()]--;
-
 			return unblocked;
 		}
 	}
@@ -191,7 +190,6 @@ int finddevicenumber(memaddr* bitmap) {
 
 void pota_debug(int* a){
 	key_pota = 0; 
-	pota_debug2();
 	return;
 }
 
