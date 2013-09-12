@@ -6,3 +6,5 @@
 
 void addokbuf(char *strp);
 unsigned int termstat(memaddr *stataddr);
+void term_puts(const char *str);
+int term_putchar(char c);

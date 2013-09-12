@@ -34,6 +34,7 @@
 #include "asl.e"
 #include "handler.h"
 #include "utils.h"
+#include "print.h"
 #include "main.h"
 #include "scheduler.h"
 #include "const13_customized.h"
@@ -60,6 +61,8 @@ void trapHandler(){
 	PANIC();
 }
 
+int*semVV;
+
 void syscallHandler(){
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
@@ -68,6 +71,7 @@ void syscallHandler(){
 	state_t *child_state;
 	int *semV = (int*) sysBp_old->reg_a1;
 	int *semP = (int *) sysBp_old->reg_a1;
+
 	copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
 
 	char buffer[1024];
@@ -76,6 +80,7 @@ void syscallHandler(){
 			//addokbuf("SYSCALL\n"); 
 			switch(current_process[cpuID]->p_s.reg_a0){
 				case CREATEPROCESS: 
+					
 					//addokbuf("CREATEPROCESS\n"); 
 					/*a1 should contain the physical address of a processor state
 					area at the time this instruction is executed.
@@ -179,10 +184,11 @@ void syscallHandler(){
 						//itoa(devNumber, buffer, 10);
 						//addokbuf(buffer);		
 						current_process[cpuID]->p_s.pc_epc += 4;
+
 						if(!(current_process[cpuID]->p_s.reg_a3)){
 							//Caso write
-							pota_debug2();
 							if(P(&sem_terminal_read[devNumber], current_process[cpuID])){
+								current_process[cpuID] = NULL;
 								LDST(&scheduler[cpuID]);
 							}
 							else{
@@ -203,11 +209,10 @@ void syscallHandler(){
 			} 
 			break;	
 		case EXC_BREAKPOINT:
-			/*copyState((state_t *)SYSBK_NEWAREA, &(current_process[cpuID]->p_s));
-			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
-			LDST(&scheduler[cpuID]);*/
-			/*addokbuf("BREAKPOINT\n");*/ 
+			addokbuf("z");
+			/*addokbuf("BREAKPOINT\n");*/
 			break;
 	}
+
 	LDST(&current_process[cpuID]->p_s); 
 }

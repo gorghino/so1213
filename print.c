@@ -2,6 +2,7 @@
 #include "uMPStypes.h"
 #include "types13.h"
 #include "libumps.h"
+#include "arch.h"
 
 #define TRANSMITTED	5
 #define TRANSTATUS    2
@@ -16,12 +17,30 @@
 #define TRANCOMMAND   3
 #define BUSY      3
 
+
+#define ST_READY           1
+#define ST_BUSY            3
+#define ST_TRANSMITTED     5
+ 
+#define CMD_ACK            1
+#define CMD_TRANSMIT       2
+ 
+#define CHAR_OFFSET        8
+#define TERM_STATUS_MASK   0xFF
+
 char okbuf[2048];			/* sequence of progress messages */
 char errbuf[128];			/* contains reason for failing */
 char msgbuf[128];			/* nonrecoverable error message before shut down */
 
 char *mp = okbuf;
 typedef unsigned int devreg;
+
+typedef unsigned int u32;
+ 
+static int term_putchar(char c);
+static u32 tx_status(termreg_t *tp);
+ 
+static termreg_t *term0_reg = (termreg_t *) DEV_REG_ADDR(IL_TERMINAL, 0);
 
 
 /******************************************************************************
@@ -106,4 +125,38 @@ void increment_counter(struct pcb_t *pcb, void* pt)
 {
 	int *counter=pt;
 	(*counter)++;
+}
+
+
+void term_puts(const char *str)
+{
+    while (*str)
+        if (term_putchar(*str++))
+            return;
+}
+ 
+int term_putchar(char c)
+{
+    u32 stat;
+ 
+    stat = tx_status(term0_reg);
+    if (stat != ST_READY && stat != ST_TRANSMITTED)
+        return -1;
+ 
+    term0_reg->transm_command = ((c << CHAR_OFFSET) | CMD_TRANSMIT);
+ 
+    while ((stat = tx_status(term0_reg)) == ST_BUSY)
+        ;
+ 
+    term0_reg->transm_command = CMD_ACK;
+ 
+    if (stat != ST_TRANSMITTED)
+        return -1;
+    else
+        return 0;
+}
+ 
+static u32 tx_status(termreg_t *tp)
+{
+    return ((tp->transm_status) & TERM_STATUS_MASK);
 }

@@ -70,38 +70,39 @@ HIDDEN unsigned int pcb_Lock = 1;
 
 void schedule(){
 
-	int cpuID = getPRID();
-	pcb_t *pRunning[MAX_CPUS];
-	//addokbuf("SCHEDULER\n");
-	if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL /*&& stateCPU[cpuID] == RUNNING*/){
-		forallProcQ(ready_queue[cpuID], increment_priority, NULL);
-		//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
+		int cpuID = getPRID();
+		pcb_t *pRunning[MAX_CPUS];
+		//addokbuf("SCHEDULER\n");
+		if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL /*&& stateCPU[cpuID] == RUNNING*/){
+			
+			forallProcQ(ready_queue[cpuID], increment_priority, NULL);
+			//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
 
-		pRunning[cpuID]->p_s.status |= STATUS_TE;
-		//setTIMER(4000); /*4ms*/
+			//pRunning[cpuID]->p_s.status |= STATUS_TE;
+			setTIMER(4000); /*4ms*/
 
-		current_process[cpuID] = pRunning[cpuID];
+			current_process[cpuID] = pRunning[cpuID];
+			current_process[cpuID]->startTime = GET_TODLOW;
 
-		current_process[cpuID]->startTime = GET_TODLOW;
-		LDST(&(pRunning[cpuID]->p_s));
-	}
-	else{
-		if(process_count[cpuID] && !softBlock_count[cpuID]){
-			PANIC(); /*Deadlock detection*/
+			LDST(&(pRunning[cpuID]->p_s));
 		}
+		else{
+			if(process_count[cpuID] && !softBlock_count[cpuID]){
+				PANIC(); /*Deadlock detection*/
+			}
 
-		if(process_count[cpuID] && softBlock_count[cpuID]){
-			//addokbuf("Ready Queue vuota: Wait\n");
-			setSTATUS(getSTATUS()|STATUS_IEp|STATUS_INT_UNMASKED|STATUS_TE);
-			stateCPU[cpuID] = WAITING;
-			WAIT();
+			if(process_count[cpuID] && softBlock_count[cpuID]){
+				setSTATUS(getSTATUS()|STATUS_IEc|STATUS_INT_UNMASKED|STATUS_TE);
+				stateCPU[cpuID] = WAITING;
+				WAIT();
+				schedule();
+			}
+
+			if(!process_count[cpuID]){
+				//addokbuf("Spengo\n");
+				HALT();
+			}		
 		}
-
-		if(!process_count[cpuID]){
-			//addokbuf("Spengo\n");
-			HALT();
-		}		
-	}
 }
 
 void pota(){
@@ -118,6 +119,7 @@ void init(){
 	for (i = 0; i < MAX_CPUS; i++) {
 		//addokbuf("Accendo CPU\n");
 		scheduler[i].status &= ~(STATUS_IEc|STATUS_KUc| STATUS_VMc);
+		scheduler[i].status |= STATUS_TE;
 		scheduler[i].pc_epc = scheduler[i].reg_t9 = (memaddr) schedule;
 		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i);
 
@@ -131,8 +133,7 @@ void init(){
 	pcb_t* init_process = allocPcb();
 	CAS(&pcb_Lock, 0, 1);
 
-	init_process->p_s.status |= STATUS_IEp|STATUS_INT_UNMASKED;
-	init_process->p_s.status &= ~STATUS_KUp;
+	init_process->p_s.status = STATUS_INT_UNMASKED|STATUS_TE|STATUS_IEp;
 	init_process->p_s.reg_sp = scheduler[MAX_CPUS-1].reg_sp - FRAME_SIZE;
 	init_process->p_s.pc_epc = init_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
@@ -143,6 +144,7 @@ void init(){
 
 	process_count[cpuID]++;
 
+	setSTATUS(STATUS_TE|STATUS_IEc|STATUS_IEc);
 	schedule();
 }
 

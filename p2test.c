@@ -127,7 +127,7 @@ void print(char *msg) {
 	char * s = msg;
 	devregtr * base = (devregtr *) (TERM0ADDR);
 	devregtr status;
-	char buffer[1024];
+	//char buffer[1024];
 	
 	SYSCALL(PASSEREN, (int)&term_mut, 0, 0);				/* get term_mut lock */
 	
@@ -138,6 +138,7 @@ void print(char *msg) {
 	
 		/* Wait for I/O completion (SYS8) */
 		status = SYSCALL(WAITIO, INT_TERMINAL, 0, FALSE);
+	
 
 /*		PANIC(); */
 		if ((status & TERMSTATMASK) != TRANSM){
@@ -157,17 +158,9 @@ void print(char *msg) {
 /*                                                                   */
 void test() {
 	
-	//addokbuf("Test() chiamato\n");
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+	print("p1 v(testsem)\n");
 
-	/*if(testsem)
-		addokbuf("Semaforo incrementato\n");
-	else if(!testsem)
-		addokbuf("Semaforo incrementato chiamata\n");*/
-	
-	//addokbuf("Syscall chiamata\n");
-
-	print("abcdefghilmnopqrst\n"); /*Al 3 crasha dopo una serie di GetLast*/
 	/* set up states of the other processes */
 
 	/* set up p2's state */
@@ -261,6 +254,7 @@ void test() {
 	gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf;
 	gchild4state.status = gchild4state.status | STATUS_IEp | STATUS_INT_UNMASKED;
 	
+
 	/* create process p2 */
 	SYSCALL(CREATEPROCESS, (int)&p2state, 19, 1);				/* start p2     */
 

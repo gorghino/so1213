@@ -121,7 +121,6 @@ int P(int *key, pcb_t *process){
 pcb_t* V(int* key){	
 	semd_t *semd;
 	pcb_t *unblocked;
-	char buffer[1024];
 	if((semd = getSemd(key))!=NULL){
 		(*semd->s_key)++;		
 		if((*semd->s_key) >= 0){
@@ -197,7 +196,7 @@ int finddevicenumber(memaddr* bitmap) {
   return device_n;
 }
 
-void pota_debug(semd_t* key){
+void pota_debug(){
 	return;
 }
 

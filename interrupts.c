@@ -55,10 +55,8 @@ void interruptHandler(){
 	/*The processor Local Timer is useful for generating interrupts*/
 	else if(CAUSE_IP_GET(cause, 1)) {
 	  //itoa(1, buffer, 10);*
-		copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );
-		insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
 		setTIMER(4000);
-		LDST(&scheduler[cpuID]);
+		schedule();
 	}
 	
 	/* Bus (Interval Timer) */
@@ -71,28 +69,28 @@ void interruptHandler(){
 	
 	/* Disk Devices */
 	else if(CAUSE_IP_GET(cause, INT_DISK)) {
-		int* diskdevice=(memaddr)INT_BITMAP_DISKDEVICE;
+		int* diskdevice=(int*)INT_BITMAP_DISKDEVICE;
 		/*itoa(*diskdevice, buffer, 10);
 		addokbuf(buffer);*/
 	}
 	
 	/* Tape Devices */
 	else if(CAUSE_IP_GET(cause, INT_TAPE)) {
-		int* tapdevice=(memaddr)INT_BITMAP_TAPEDEVICE;
+		int* tapdevice=(int*)INT_BITMAP_TAPEDEVICE;
 		/*itoa(*tapdevice, buffer, 10);
 		addokbuf(buffer);*/
 	}
 	
 	/* Network (Ethernet) Devices */
 	else if(CAUSE_IP_GET(cause, INT_UNUSED)) {
-		int* netdevice=(memaddr)INT_BITMAP_NETDEVICE;
+		int* netdevice=(int*)INT_BITMAP_NETDEVICE;
 		/*itoa(*netdevice, buffer, 10);
 		addokbuf(buffer);*/
 	}
 	
 	/* Printer Devices */
 	else if(CAUSE_IP_GET(cause, INT_PRINTER)) {
-		int* printdevice=(memaddr)INT_BITMAP_PRINTERDEVICE;
+		int* printdevice=(int*)INT_BITMAP_PRINTERDEVICE;
 		/*itoa(*printdevice, buffer, 10);
 		addokbuf(buffer);*/
 	}
@@ -100,9 +98,7 @@ void interruptHandler(){
 	/* Terminal Devices */
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
 
-
-
-		int* terminaldevice=(memaddr)INT_BITMAP_TERMINALDEVICE;
+		int* terminaldevice=(int*)INT_BITMAP_TERMINALDEVICE;
 		//itoa(*terminaldevice, buffer, 10);
 		//addokbuf("Terminal\n");
 		//addokbuf(buffer);
@@ -123,17 +119,15 @@ void interruptHandler(){
 		itoa(DEVREG->recv_command, buffer, 10);
 		addokbuf(buffer);*/
 		
-		int devicenumber = finddevicenumber(INT_BITMAP_TERMINALDEVICE);
+		int devicenumber = finddevicenumber((memaddr*)INT_BITMAP_TERMINALDEVICE);
 
-		
 		//addokbuf("Device register\n");
 		//itoa(devicenumber, buffer, 10);
 		//addokbuf(buffer);
 		//addokbuf("\n");
 		if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
 
-			if( (unblocked = V(&sem_terminal_write[devicenumber])) != NULL){
-				
+			if( (unblocked = V(&sem_terminal_write[devicenumber])) != NULL){	
 				unblocked->p_s.reg_v0 = *TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
 				insertProcQ(&ready_queue[cpuID], unblocked);
 			}
@@ -155,9 +149,15 @@ void interruptHandler(){
 				insertProcQ(&ready_queue[cpuID], current_process[cpuID]);			
 			}
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
+			schedule();
 		}
 		
 	}
-	pota_debug(0);
-	LDST(&scheduler[cpuID]);
+
+	if(current_process[cpuID] != NULL){
+			copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
+			LDST(&current_process[cpuID]->p_s); 
+	}
+
+	schedule();
 }
