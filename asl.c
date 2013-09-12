@@ -63,8 +63,10 @@ semd_t* getSemd_rec(semd_t **semd_h, int* key){
 		return NULL; /*Il semaforo non esiste nella ASL*/
 	}
 
-	if((*semd_h)->s_key == key)
+	if((*semd_h)->s_key == key){
+		
 		return *semd_h;
+	}
 
 	else 
 		return getSemd_rec(&((*semd_h)->s_next), key);
@@ -76,12 +78,13 @@ Se non è possibile allocare un nuovo SEMD perchè la lista di quelli liberi è 
 In tutti gli altri casi,restituisce FALSE*/
 int insertBlocked(int *key, pcb_t* p){
 		semd_t *semd_target = getSemd(key);
-		if(semd_target == NULL){		
+		if(semd_target == NULL){
 			/*Il semaforo non esiste nella ASL*/
+
 			semd_target = allocSem(); /*semd_target ora punta al SEMD tolto dalla semdFree. Se semdFree è vuota, semd_target == NULL*/
 			if (semd_target == NULL) /*Se la semdFree è vuota restituisco TRUE*/
 				return TRUE;
-			semd_target->s_key = key; 
+			semd_target->s_key = key;
 			insertSEMList(&semd_h, semd_target); /*Alloco semd_target nella ASL*/
 			p->p_semkey = key;
 			insertProcQ(&(semd_target->s_procQ), p); /*Inserisco p nella coda di processi bloccati di semd_target*/
@@ -113,8 +116,12 @@ semd_t *allocSem(){
 semd_t *deAllocSem(semd_t **semd_h, semd_t *sem){
 	if(*semd_h == sem){
 		semd_t *removed = sem;
+
+		removed->s_key = NULL;
+		removed->s_next = NULL;
+
 		*semd_h = sem->s_next;
-		insertSEMList(&semdFree_h, sem); /*Reinserisce il semaforo nella semdFree*/
+		insertSEMList(&semdFree_h, removed); /*Reinserisce il semaforo nella semdFree*/
 		return removed;
 	}
 	else 

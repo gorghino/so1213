@@ -28,8 +28,6 @@
 #include "uMPStypes.h"
 #include "print.h"
 
-
-#define	MAX_CPUS 1
 #define NUM_DEVICES 8
 
 pcb_t *ready_queue[MAX_CPUS];
@@ -38,6 +36,7 @@ pcb_t *current_process[MAX_CPUS];
 int process_count[MAX_CPUS];
 int softBlock_count[MAX_CPUS];
 int pseudo_clock[MAX_CPUS];
+int stateCPU[MAX_CPUS]; 
 state_t *new_old_areas[MAX_CPUS][8];	
 
 

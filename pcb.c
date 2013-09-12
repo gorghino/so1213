@@ -83,7 +83,7 @@ void insertProcQ(pcb_t **head, pcb_t* p){
 	if ((*head) == NULL){
 		(*head) = p; /*la coda è vuota, p è il primo elemento*/
 		}
-	else if(p->priority < (*head)->priority && head != NULL ){
+	else if(p->priority < (*head)->priority && head != NULL ){	
 			insertProcQ(&((*head)->p_next), p);
 			}
 	else if(p->priority > (*head)->priority && head != NULL){
@@ -95,7 +95,6 @@ void insertProcQ(pcb_t **head, pcb_t* p){
 	else{
 		/*Lo inserisco dopo, evito Starvation*/
 		pcb_t *last_equal = getLast(head, p->priority); 
-		
 		p->p_next = last_equal->p_next;
 		last_equal->p_next = p;
 	}

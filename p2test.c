@@ -135,8 +135,7 @@ void print(char *msg) {
 	  /* Put "transmit char" command+char in term0 register (3rd word). This 
 		   actually starts the operation on the device! */
 		*(base + 3) = PRINTCHR | (((devregtr) *s) << BYTELEN);
-		
-
+	
 		/* Wait for I/O completion (SYS8) */
 		status = SYSCALL(WAITIO, INT_TERMINAL, 0, FALSE);
 
@@ -145,7 +144,7 @@ void print(char *msg) {
 			PANIC();
 		}
 		
-		s++;	
+		s++;
 
 	}
 	
@@ -159,8 +158,7 @@ void print(char *msg) {
 void test() {
 	
 	//addokbuf("Test() chiamato\n");
-
-	//SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
 	/*if(testsem)
 		addokbuf("Semaforo incrementato\n");
@@ -169,7 +167,7 @@ void test() {
 	
 	//addokbuf("Syscall chiamata\n");
 
-	print("p1");
+	print("abcdefghilmnopqrst\n"); /*Al 3 crasha dopo una serie di GetLast*/
 	/* set up states of the other processes */
 
 	/* set up p2's state */
@@ -262,7 +260,6 @@ void test() {
 	gchild4state.reg_sp = gchild3state.reg_sp - QPAGE;
 	gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf;
 	gchild4state.status = gchild4state.status | STATUS_IEp | STATUS_INT_UNMASKED;
-	
 	
 	/* create process p2 */
 	SYSCALL(CREATEPROCESS, (int)&p2state, 19, 1);				/* start p2     */

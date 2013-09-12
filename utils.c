@@ -92,19 +92,29 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 	else insertSibling(firstchild->p_sib, p);
 }
 
-void P(int *key, pcb_t *process){
-	semd_t *semd;
-	if((semd = getSemd(key))!=NULL){
-		if((*semd->s_key) >= 0)
-			*(semd->s_key)--;
+int P(int *key, pcb_t *process){
+	semd_t *semd = getSemd(key);
+
+	if(semd !=NULL){
+		if((*semd->s_key) >= 0){
+			(*semd->s_key)--;
+		}
 		if((*semd->s_key) < 0){
 			insertBlocked(key, process);
 			softBlock_count[getPRID()]++;
+			return TRUE; //Mi blocco
 		}
+		else
+			return FALSE; //Non mi blocco
 	}
 	else{
 		insertBlocked(key, process); // Alloca il semaforo se non esiste
+		semd_t *semd = getSemd(key);
+		if(semd !=NULL)
+			if((*semd->s_key) >= 0)
+				(*semd->s_key)--;
 		softBlock_count[getPRID()]++;
+		return TRUE;
 	}
 }
 
@@ -113,8 +123,7 @@ pcb_t* V(int* key){
 	pcb_t *unblocked;
 	char buffer[1024];
 	if((semd = getSemd(key))!=NULL){
-		pota_debug(key);
-		(*semd->s_key)++;
+		(*semd->s_key)++;		
 		if((*semd->s_key) >= 0){
 			unblocked = removeBlocked(key);
 			softBlock_count[getPRID()]--;
@@ -188,8 +197,7 @@ int finddevicenumber(memaddr* bitmap) {
   return device_n;
 }
 
-void pota_debug(int* a){
-	key_pota = 0; 
+void pota_debug(semd_t* key){
 	return;
 }
 

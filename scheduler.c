@@ -69,17 +69,16 @@ HIDDEN unsigned int pcb_Lock = 1;
 
 
 void schedule(){
+
 	int cpuID = getPRID();
 	pcb_t *pRunning[MAX_CPUS];
 	//addokbuf("SCHEDULER\n");
-
-	if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL){
+	if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL /*&& stateCPU[cpuID] == RUNNING*/){
 		forallProcQ(ready_queue[cpuID], increment_priority, NULL);
 		//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
-		process_count[cpuID]++;
 
 		pRunning[cpuID]->p_s.status |= STATUS_TE;
-		setTIMER(4000); /*4ms*/
+		//setTIMER(4000); /*4ms*/
 
 		current_process[cpuID] = pRunning[cpuID];
 
@@ -87,13 +86,15 @@ void schedule(){
 		LDST(&(pRunning[cpuID]->p_s));
 	}
 	else{
-		if(process_count[cpuID] && !softBlock_count[cpuID])
+		if(process_count[cpuID] && !softBlock_count[cpuID]){
 			PANIC(); /*Deadlock detection*/
+		}
 
-		if(process_count && softBlock_count[cpuID]){
+		if(process_count[cpuID] && softBlock_count[cpuID]){
 			//addokbuf("Ready Queue vuota: Wait\n");
+			setSTATUS(getSTATUS()|STATUS_IEp|STATUS_INT_UNMASKED|STATUS_TE);
+			stateCPU[cpuID] = WAITING;
 			WAIT();
-			//while(1);
 		}
 
 		if(!process_count[cpuID]){
@@ -104,6 +105,8 @@ void schedule(){
 }
 
 void pota(){
+	setTIMER(100);
+	SET_IT(100);
 	while(1);
 }
 
@@ -134,9 +137,11 @@ void init(){
 	init_process->p_s.pc_epc = init_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
 	insertProcQ(&ready_queue[cpuID], init_process);
-
+	stateCPU[cpuID] = RUNNING;
 	/*Sets the global Interval Timer*/
-	SET_IT(SCHED_PSEUDO_CLOCK);
+	//SET_IT(SCHED_PSEUDO_CLOCK);
+
+	process_count[cpuID]++;
 
 	schedule();
 }

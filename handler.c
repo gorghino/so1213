@@ -35,6 +35,7 @@
 #include "handler.h"
 #include "utils.h"
 #include "main.h"
+#include "scheduler.h"
 #include "const13_customized.h"
 
  #define	MAX_CPUS 1
@@ -47,6 +48,7 @@ extern int softBlock_count[MAX_CPUS];
 state_t *sysBp_old = (state_t *)SYSBK_OLDAREA;
 state_t *pgmTrap_old = (state_t *)PGMTRAP_OLDAREA;
 state_t *tlbTrap_old = (state_t *)TLB_OLDAREA;
+state_t *sysBp_new = (state_t *)SYSBK_NEWAREA;
 
 
 void tlbHandler(){
@@ -66,12 +68,11 @@ void syscallHandler(){
 	state_t *child_state;
 	int *semV = (int*) sysBp_old->reg_a1;
 	int *semP = (int *) sysBp_old->reg_a1;
-
 	copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
 
 	char buffer[1024];
 	switch(cause){
-		case EXC_SYSCALL: 
+		case EXC_SYSCALL: 	
 			//addokbuf("SYSCALL\n"); 
 			switch(current_process[cpuID]->p_s.reg_a0){
 				case CREATEPROCESS: 
@@ -106,14 +107,16 @@ void syscallHandler(){
 					outChildBlocked(current_process[cpuID]);					
 					break;
 
-				case VERHOGEN: 
+				case VERHOGEN:
+
 					//addokbuf("VERHOGEN\n"); 
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
-					if ((unblocked = removeBlocked (semV)) != NULL){
+					if ((unblocked = removeBlocked(semV)) != NULL){
 						softBlock_count[cpuID]--;
 						insertProcQ(&ready_queue[cpuID], unblocked);
 					}
+					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
 				case PASSEREN: 
@@ -124,7 +127,10 @@ void syscallHandler(){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
 						softBlock_count[cpuID]++;
 						insertBlocked(semP, current_process[cpuID]);
+						LDST(&scheduler[cpuID]);
 					}
+					else
+						current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
 				case SPECTRAPVEC: 
@@ -168,32 +174,40 @@ void syscallHandler(){
 					//addokbuf("WAITIO\n"); 
 					/*verificare se si è in attesa di I/O*/
 					if (current_process[cpuID]->p_s.reg_a1 <= INT_TERMINAL) {
-						
+					
 						int devNumber = current_process[cpuID]->p_s.reg_a2;
 						//itoa(devNumber, buffer, 10);
 						//addokbuf(buffer);		
-						
+						current_process[cpuID]->p_s.pc_epc += 4;
 						if(!(current_process[cpuID]->p_s.reg_a3)){
 							//Caso write
-							P(&sem_terminal_read[devNumber], current_process[cpuID]);
-							current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];
-							//itoa(current_process[cpuID]->p_s.reg_a2, buffer, 10);
-							//addokbuf("Pota\n");			
+							pota_debug2();
+							if(P(&sem_terminal_read[devNumber], current_process[cpuID])){
+								LDST(&scheduler[cpuID]);
+							}
+							else{
+								current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];		
+							}
 						}					
 						else{
 							//Caso read
-							P(&sem_terminal_write[devNumber], current_process[cpuID]);
-							current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];
+							if(P(&sem_terminal_write[devNumber], current_process[cpuID])){
+								LDST(&scheduler[cpuID]);
+							}
+							else
+								current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];			
 						}
-
-					insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
+						insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
+					}
 					break;
 			} 
+			break;	
+		case EXC_BREAKPOINT:
+			/*copyState((state_t *)SYSBK_NEWAREA, &(current_process[cpuID]->p_s));
+			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
+			LDST(&scheduler[cpuID]);*/
+			/*addokbuf("BREAKPOINT\n");*/ 
 			break;
 	}
-	break;	
-	case EXC_BREAKPOINT: /*addokbuf("BREAKPOINT\n");*/ break;
-	}
-	sysBp_old->pc_epc += 4; 
-	LDST(sysBp_old); 
+	LDST(&current_process[cpuID]->p_s); 
 }
