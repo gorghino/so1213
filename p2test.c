@@ -158,7 +158,7 @@ void print(char *msg) {
 /*                                                                   */
 void test() {
 	
-	//SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 	print("p1 v(testsem)\n");
 
 	/* set up states of the other processes */
@@ -260,9 +260,10 @@ void test() {
 	print("p2 was started, ma e' stato bloccato.\nRiprende il controllo p1\n");
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
-	pota_debug();
+
 	print("p2 sbloccata e inserita nella readyQ\n");
   /* P1 blocks until p2 finishes and Vs endp2 */
+
 
 	SYSCALL(PASSEREN, (int)&endp2, 0, 0);					/* P(endp2)     */
 
@@ -341,7 +342,6 @@ void p2() {
 
 	now1 = GET_TODLOW;                  				/* time of day   */
 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
-
 	/* delay for several milliseconds */
 	for (i = 1; i < LOOPNUM; i++)
 		;
@@ -362,8 +362,8 @@ void p2() {
 
 	p1p2synch = 1;				/* p1 will check this */
 
-	SYSCALL(VERHOGEN, (int)&endp2, 0, 0);				/* V(endp2)     */
 
+	SYSCALL(VERHOGEN, (int)&endp2, 0, 0);				/* V(endp2)     */
 	SYSCALL(TERMINATEPROCESS, 0, 0, 0);			/* terminate p2 */
 
 	/* just did a SYS2, so should not get to this point */

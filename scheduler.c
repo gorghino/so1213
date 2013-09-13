@@ -69,11 +69,10 @@ HIDDEN unsigned int pcb_Lock = 1;
 
 
 void schedule(){
-		pota_debug2();
 		int cpuID = getPRID();
 		pcb_t *pRunning[MAX_CPUS];
 		//addokbuf("SCHEDULER\n");
-		if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL /*&& stateCPU[cpuID] == RUNNING*/){
+		if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL){
 			
 			forallProcQ(ready_queue[cpuID], increment_priority, NULL);
 			//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
@@ -82,7 +81,8 @@ void schedule(){
 			setTIMER(4000); /*4ms*/
 
 			current_process[cpuID] = pRunning[cpuID];
-			current_process[cpuID]->startTime = GET_TODLOW;
+			if(current_process[cpuID]->startTime == 0)
+				current_process[cpuID]->startTime = GET_TODLOW;
 
 			LDST(&(pRunning[cpuID]->p_s));
 		}

@@ -108,9 +108,11 @@ void syscallHandler(){
 					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
-				case TERMINATEPROCESS: 
+				case TERMINATEPROCESS:
+					pota_debug2();
 					//addokbuf("TERMINATEPROCESS\n"); 
-					outChildBlocked(current_process[cpuID]);					
+					outChildBlocked(current_process[cpuID]);
+					pota_debug2();			
 					break;
 
 				case VERHOGEN:
@@ -121,7 +123,6 @@ void syscallHandler(){
 					if ((unblocked = removeBlocked(semV)) != NULL){
 						softBlock_count[cpuID]--;
 						insertProcQ(&ready_queue[cpuID], unblocked);
-						pota_debug();
 					}
 					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
@@ -133,7 +134,9 @@ void syscallHandler(){
 					if(*semP < 0){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
 						softBlock_count[cpuID]++;
+						current_process[cpuID]->p_s.pc_epc += 4;
 						insertBlocked(semP, current_process[cpuID]);
+						pota_debug();
 						LDST(&scheduler[cpuID]);
 					}
 					else
@@ -168,11 +171,13 @@ void syscallHandler(){
 				case GETCPUTIME: 
 					//addokbuf("GETCPUTIME\n"); 
 					current_process[cpuID]->p_s.reg_v0 = (GET_TODLOW - current_process[cpuID]->startTime);
+					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 					
 				case WAITCLOCK: 
 					//addokbuf("WAITCLOCK\n"); 
 					P((int*) SCHED_PSEUDO_CLOCK, current_process[cpuID]);
+					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
 				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
@@ -215,6 +220,5 @@ void syscallHandler(){
 			/*addokbuf("BREAKPOINT\n");*/
 			break;
 	}
-	pota_debug2();
 	LDST(&current_process[cpuID]->p_s); 
 }

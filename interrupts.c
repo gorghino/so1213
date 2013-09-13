@@ -148,7 +148,6 @@ void interruptHandler(){
 				insertProcQ(&ready_queue[cpuID], current_process[cpuID]);			
 			}
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
-			schedule();
 		}
 		
 	}
