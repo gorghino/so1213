@@ -56,14 +56,13 @@ void interruptHandler(){
 	else if(CAUSE_IP_GET(cause, 1)) {
 	  //itoa(1, buffer, 10);*
 		setTIMER(4000);
-		schedule();
 	}
 	
 	/* Bus (Interval Timer) */
 	/*For Interval Timer interrupts that represent a pseudo-clock tick (see Section 3.7.1), perform the V 
 	operation on the nucleus maintained pseudo-clock timer semaphore.*/
 	else if(CAUSE_IP_GET(cause, INT_TIMER)) {
-		HALT();
+		SET_IT(SCHED_PSEUDO_CLOCK);
 		//itoa(INT_TIMER, buffer, 10);
 	}
 	
@@ -156,7 +155,8 @@ void interruptHandler(){
 
 	if(current_process[cpuID] != NULL){
 			copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
-			LDST(&current_process[cpuID]->p_s); 
+			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);	
+			//LDST(&current_process[cpuID]->p_s); 
 	}
 
 	schedule();

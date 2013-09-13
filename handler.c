@@ -80,31 +80,32 @@ void syscallHandler(){
 			//addokbuf("SYSCALL\n"); 
 			switch(current_process[cpuID]->p_s.reg_a0){
 				case CREATEPROCESS: 
-					
-					//addokbuf("CREATEPROCESS\n"); 
+
+					/*The SYS1 service is requested by the calling process by placing the value
+					1 in a0, the physical address of a processor state in a1, and then executing a
+					SYSCALL instruction.*/
+
 					/*a1 should contain the physical address of a processor state
 					area at the time this instruction is executed.
 					This processor state should be used
 					as the initial state for the newly created process*/
-					child_state = (state_t *)(current_process[cpuID]->p_s).reg_a1;
-					/*If the new process cannot be created due
-					to lack of resources (for example no more free ProcBlk’s),
-					 an error code of -1 is
-					placed/returned in the caller’s v0,
-					 otherwise, return the value 0 in the caller’s v0.
-					The SYS1 service is requested by the calling process by placing the value
-					1 in a0, the physical address of a processor state in a1, and then executing a
-					SYSCALL instruction. */
-					if ( ( child = allocPcb() ) != NULL ) {
+					child_state = (state_t *)current_process[cpuID]->p_s.reg_a1;
+
+					/*If the new process cannot be created due to lack of resources (for example no more free ProcBlk’s),
+					 an error code of -1 is placed/returned in the caller’s v0, otherwise, 
+					 return the value 0 in the caller’s v0.
+					*/
+					if (( child = allocPcb() ) == NULL)
 						(current_process[cpuID]->p_s).reg_v0 = -1;
-					}
 					else {
-						(current_process[cpuID]->p_s).reg_v0 = 0;	
-						child_state=&(child->p_s);
+						copyState(child_state, &(child->p_s));
 						child->priority=(current_process[cpuID]->p_s).reg_a2;
 						insertChild(current_process[cpuID], child);
 						insertProcQ(&ready_queue[cpuID], child);
-					} 
+						(current_process[cpuID]->p_s).reg_v0 = 0;
+					}
+
+					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
 				case TERMINATEPROCESS: 
@@ -120,11 +121,12 @@ void syscallHandler(){
 					if ((unblocked = removeBlocked(semV)) != NULL){
 						softBlock_count[cpuID]--;
 						insertProcQ(&ready_queue[cpuID], unblocked);
+						pota_debug();
 					}
 					current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
-				case PASSEREN: 
+				case PASSEREN:
 					//addokbuf("PASSEREN\n"); 
 					if((*semP) >= 0)
 						(*semP)--;
@@ -213,6 +215,6 @@ void syscallHandler(){
 			/*addokbuf("BREAKPOINT\n");*/
 			break;
 	}
-
+	pota_debug2();
 	LDST(&current_process[cpuID]->p_s); 
 }

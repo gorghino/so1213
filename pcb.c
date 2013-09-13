@@ -56,8 +56,9 @@ void freePcb(pcb_t *p){
 /*Restituisce NULL se la pcbFree e’ vuota. Altrimenti rimuove un elemento dalla pcbFree, inizializza tutti i 
 campi (NULL/0) e restituisce l’elemento rimosso.*/
 pcb_t *allocPcb(void){
-	if(emptyPCBList(&pcbfree_h))
+	if(emptyPCBList(&pcbfree_h)){
 		return NULL;
+	}
 	else{
 		pcb_t *ptemp = pcbfree_h;
 		pcbfree_h = pcbfree_h->p_next;

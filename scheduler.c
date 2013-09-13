@@ -69,7 +69,7 @@ HIDDEN unsigned int pcb_Lock = 1;
 
 
 void schedule(){
-
+		pota_debug2();
 		int cpuID = getPRID();
 		pcb_t *pRunning[MAX_CPUS];
 		//addokbuf("SCHEDULER\n");
@@ -140,11 +140,11 @@ void init(){
 	insertProcQ(&ready_queue[cpuID], init_process);
 	stateCPU[cpuID] = RUNNING;
 	/*Sets the global Interval Timer*/
-	//SET_IT(SCHED_PSEUDO_CLOCK);
+	SET_IT(SCHED_PSEUDO_CLOCK);
 
 	process_count[cpuID]++;
 
-	setSTATUS(STATUS_TE|STATUS_IEc|STATUS_IEc);
+	setSTATUS(STATUS_TE|STATUS_IEc);
 	schedule();
 }
 
