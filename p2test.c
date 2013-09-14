@@ -439,6 +439,7 @@ void p4() {
 
 	p4state.reg_sp -= QPAGE;		/* give another page  */
 
+	print("new p4 starts\n");
 	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);			/* start a new p4    */
 
   	SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* wait for it       */
@@ -446,7 +447,7 @@ void p4() {
 	print("p4 is OK\n");
 
 	SYSCALL(VERHOGEN, (int)&endp4, 0, 0);				/* V(endp4)          */
-
+	pota_debug2();
 	SYSCALL(TERMINATEPROCESS, 0, 0, 0);			/* terminate p4      */
 
 	/* just did a SYS2, so should not get to this point */
@@ -458,6 +459,7 @@ void p4() {
 
 /* p5's program trap handler */
 void p5prog() {
+	pota_debug();
 	unsigned int exeCode = pstat_o.cause;
 	exeCode = (exeCode & CAUSEMASK) >> 2;
 	
@@ -543,7 +545,7 @@ void p5() {
 
 	SYSCALL(SPECTRAPVEC, SYS5_SYSBK, (int)&sstat_o, (int)&sstat_n);
 	
-	/* to cause a pgm trap access some non-existent memory */	
+	/* to cause a pgm trap access some non-existent memory */
 	*p5MemLocation = *p5MemLocation + 1;		 /* Should cause a program trap */
 }
 
@@ -576,7 +578,7 @@ void p5b() {
 	}
 
 	/* if p4 and offspring are really dead, this will increment blkp4 */
-
+	pota_debug2();
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */

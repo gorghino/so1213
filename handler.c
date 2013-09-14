@@ -24,8 +24,8 @@
  #define TLB_OLD 		0
  #define TLB_NEW		1
  #define PGMTRAP_OLD 	2
- #define PGMTRAP_NEW 3
- #define SYSBREAKPOINT_OLD 	4
+ #define PGMTRAP_NEW	3
+ #define SYSBREAKPOINT_OLD	4
  #define SYSBREAKPOINT_NEW 	5	
 
 #include "libumps.h"
@@ -57,8 +57,21 @@ void tlbHandler(){
 	PANIC();
 }
 void trapHandler(){
-	addokbuf("trapHandler: Panico!");
-	PANIC();
+	pota_debug2();
+	//addokbuf("trapHandler: Panico!");
+	int cpuID = getPRID();
+	if(current_process[cpuID]->states_array[PGMTRAP_NEW] != NULL){
+		copyState(((state_t*)PGMTRAP_OLDAREA), (current_process[cpuID]->states_array[PGMTRAP_OLD]));
+		copyState((current_process[cpuID]->states_array[PGMTRAP_NEW]), &current_process[cpuID]->p_s);
+	}
+	else{
+		/*Else killo il processo*/
+		terminatePcb(current_process[cpuID]);
+		freePcb(current_process[cpuID]);
+		current_process[cpuID] = NULL;
+		process_count[cpuID]--;	
+	}
+	LDST(&scheduler[cpuID]);
 }
 
 int*semVV;
@@ -100,7 +113,7 @@ void syscallHandler(){
 						process_count[cpuID]++;
 						copyState(child_state, &(child->p_s));
 						child->priority=(current_process[cpuID]->p_s).reg_a2;
-						child->static_priority = (current_process[cpuID]->p_s).reg_a2;
+						child->static_priority = child->priority;
 						insertChild(current_process[cpuID], child);
 						insertProcQ(&ready_queue[cpuID], child);
 						(current_process[cpuID]->p_s).reg_v0 = 0;
@@ -148,28 +161,65 @@ void syscallHandler(){
 						current_process[cpuID]->p_s.pc_epc += 4;
 					break;
 
-				case SPECTRAPVEC: 
+				case SPECTRAPVEC:
+					pota_debug2(); 
 					//addokbuf("SPECTRAPVEC\n"); 
 					/*nel registro a1 ho il tipo di eccezione e da li ho 3 casi. (TLB exceptions, PGMTRAP e SysBp).
 					Nella struttura pcb abbiamo un array [0-5] dove vengono salvati gli stati del processore.
 					Nei reg_a3 abbiamo i NEW (da utilizzare nel caso si verifichino exceptions o PGMTRAP) 
 					e nei reg_a2 gli OLD, salviamo anche questi nel nostro states_array[6]*/
 
+					current_process[cpuID]->p_s.pc_epc += 4;
 					
-					if(!current_process[cpuID]->p_s.reg_a1){
-						/*TLB exceptions*/
-					current_process[cpuID]->states_array[TLB_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
-					current_process[cpuID]->states_array[TLB_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
-						}
-					else if(current_process[cpuID]->p_s.reg_a1==1){
-						/*PGMTRAP exceptions*/
-						current_process[cpuID]->states_array[PGMTRAP_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
-						current_process[cpuID]->states_array[PGMTRAP_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
-					}
-					else if (current_process[cpuID]->p_s.reg_a1==2){
-						/*SysBp exceptions*/
-						current_process[cpuID]->states_array[SYSBREAKPOINT_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
-						current_process[cpuID]->states_array[SYSBREAKPOINT_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
+					switch(current_process[cpuID]->p_s.reg_a1){
+						case 0:
+							/*TLB exceptions*/
+							if(current_process[cpuID]->states_array[TLB_OLD]){
+								current_process[cpuID]->states_array[TLB_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
+								current_process[cpuID]->states_array[TLB_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
+							}
+							else{
+								/*TLB exceptions già impostata. Killo*/
+								terminatePcb(current_process[cpuID]);
+								freePcb(current_process[cpuID]);
+								current_process[cpuID] = NULL;
+								
+								process_count[cpuID]--;
+								LDST(&scheduler[cpuID]);	
+							}
+							break;
+						case 1:
+							/*PGMTRAP exceptions*/
+							if(current_process[cpuID]->states_array[TLB_OLD]){
+								current_process[cpuID]->states_array[PGMTRAP_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
+								current_process[cpuID]->states_array[PGMTRAP_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
+							}
+							else{
+								/*PGMTRAP exceptions già impostata. Killo*/
+								terminatePcb(current_process[cpuID]);
+								freePcb(current_process[cpuID]);
+								current_process[cpuID] = NULL;
+								
+								process_count[cpuID]--;
+								LDST(&scheduler[cpuID]);	
+							}
+							break;
+						case 2:
+							/*SysBp exceptions*/
+							if(current_process[cpuID]->states_array[TLB_OLD]){
+								current_process[cpuID]->states_array[SYSBREAKPOINT_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
+								current_process[cpuID]->states_array[SYSBREAKPOINT_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
+							}
+							else{
+								/*SysBp exceptions già impostata. Killo*/
+								terminatePcb(current_process[cpuID]);
+								freePcb(current_process[cpuID]);
+								current_process[cpuID] = NULL;
+								
+								process_count[cpuID]--;
+								LDST(&scheduler[cpuID]);	
+							}
+							break;
 					}
 					break;
                     
@@ -218,6 +268,21 @@ void syscallHandler(){
 								current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];			
 						}
 						//insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
+					}
+					break;
+				default:
+					/*Viene chiamata una SYSCALL fuori range. Controllo se è stato specificato SYS5*/
+					if(current_process[cpuID]->states_array[SYSBREAKPOINT_NEW] != NULL){
+						copyState(((state_t*)SYSBK_OLDAREA), (current_process[cpuID]->states_array[SYSBREAKPOINT_OLD]));
+						copyState((current_process[cpuID]->states_array[SYSBREAKPOINT_NEW]), &current_process[cpuID]->p_s);
+					}
+					else{
+						/*Else killo il processo*/
+						terminatePcb(current_process[cpuID]);
+						freePcb(current_process[cpuID]);
+						current_process[cpuID] = NULL;
+						process_count[cpuID]--;
+						LDST(&scheduler[cpuID]);	
 					}
 					break;
 			} 
