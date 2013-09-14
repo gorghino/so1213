@@ -257,7 +257,7 @@ void test() {
 
 	/* create process p2 */
 	SYSCALL(CREATEPROCESS, (int)&p2state, 19, 1);				/* start p2     */
-	print("p2 was started, ma e' stato bloccato.\nRiprende il controllo p1\n");
+	print("p2 was started\n");
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
 
@@ -270,15 +270,12 @@ void test() {
 	/* make sure we really blocked */
 	if (p1p2synch == 0)
 		print("error: p1/p2 synchronization bad\n");
-
+	
 	SYSCALL(CREATEPROCESS, (int)&p3state, 10, 1);				/* start p3  */
-
 	print("p3 is started\n");
-
   /* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
-
-
+	
 	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);		/* start p4     */
 
 	SYSCALL(CREATEPROCESS, (int)&p5state, 10, 3); 		/* start p5     */
@@ -380,13 +377,15 @@ void p3() {
 
 	time1 = 0;
 	time2 = 0;
-
+	
 	/* loop until we are delayed at least half of clock V interval */
 	while ((time2 - time1) < (CLOCKINTERVAL >> 1) )  {
 		time1 = GET_TODLOW;			/* time of day     */
 		SYSCALL(WAITCLOCK, 0, 0, 0);
 		time2 = GET_TODLOW;			/* new time of day */
+		//print("z\n");
 	}
+	
 
 	print("p3 - WAITCLOCK OK\n");
 
@@ -394,9 +393,10 @@ void p3() {
 	   time correctly */
 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);
 
-	for (i = 0; i < CLOCKLOOP; i++)
-		SYSCALL(WAITCLOCK, 0, 0, 0);
-	
+	for (i = 0; i < CLOCKLOOP; i++){
+		SYSCALL(WAITCLOCK, 0, 0, 0);	
+	}
+
 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);
 
 	if ((cpu_t2 - cpu_t1) < (MINCLOCKLOOP / (* ((cpu_t *) BUS_TIMESCALE))))
@@ -441,7 +441,7 @@ void p4() {
 
 	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);			/* start a new p4    */
 
-  SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* wait for it       */
+  	SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* wait for it       */
   
 	print("p4 is OK\n");
 

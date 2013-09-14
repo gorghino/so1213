@@ -80,7 +80,6 @@ void syscallHandler(){
 			//addokbuf("SYSCALL\n"); 
 			switch(current_process[cpuID]->p_s.reg_a0){
 				case CREATEPROCESS: 
-
 					/*The SYS1 service is requested by the calling process by placing the value
 					1 in a0, the physical address of a processor state in a1, and then executing a
 					SYSCALL instruction.*/
@@ -98,8 +97,10 @@ void syscallHandler(){
 					if (( child = allocPcb() ) == NULL)
 						(current_process[cpuID]->p_s).reg_v0 = -1;
 					else {
+						process_count[cpuID]++;
 						copyState(child_state, &(child->p_s));
 						child->priority=(current_process[cpuID]->p_s).reg_a2;
+						child->static_priority = (current_process[cpuID]->p_s).reg_a2;
 						insertChild(current_process[cpuID], child);
 						insertProcQ(&ready_queue[cpuID], child);
 						(current_process[cpuID]->p_s).reg_v0 = 0;
@@ -109,10 +110,14 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
-					pota_debug2();
+					
 					//addokbuf("TERMINATEPROCESS\n"); 
-					outChildBlocked(current_process[cpuID]);
-					pota_debug2();			
+					terminatePcb(current_process[cpuID]);
+					freePcb(current_process[cpuID]);
+					current_process[cpuID] = NULL;
+					
+					process_count[cpuID]--;
+					LDST(&scheduler[cpuID]);	
 					break;
 
 				case VERHOGEN:
@@ -133,10 +138,10 @@ void syscallHandler(){
 						(*semP)--;
 					if(*semP < 0){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
-						softBlock_count[cpuID]++;
 						current_process[cpuID]->p_s.pc_epc += 4;
 						insertBlocked(semP, current_process[cpuID]);
-						pota_debug();
+						softBlock_count[cpuID]++;
+						current_process[cpuID] = NULL;
 						LDST(&scheduler[cpuID]);
 					}
 					else
@@ -175,9 +180,11 @@ void syscallHandler(){
 					break;
 					
 				case WAITCLOCK: 
-					//addokbuf("WAITCLOCK\n"); 
-					P((int*) SCHED_PSEUDO_CLOCK, current_process[cpuID]);
 					current_process[cpuID]->p_s.pc_epc += 4;
+					if(P(&pseudo_clock[cpuID], current_process[cpuID])){
+						current_process[cpuID] = NULL;
+						LDST(&scheduler[cpuID]);
+					}
 					break;
 
 				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
@@ -210,12 +217,13 @@ void syscallHandler(){
 							else
 								current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];			
 						}
-						insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
+						//insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
 					}
 					break;
 			} 
 			break;	
 		case EXC_BREAKPOINT:
+			HALT();
 			addokbuf("z");
 			/*addokbuf("BREAKPOINT\n");*/
 			break;

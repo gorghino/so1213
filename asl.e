@@ -15,7 +15,9 @@ int insertBlocked(int *key, pcb_t* p);
 pcb_t* removeBlocked(int *key);
 pcb_t* outBlocked(pcb_t *p);
 pcb_t* headBlocked(int *key);
+void terminatePcb(pcb_t *p);
 void outChildBlocked(pcb_t *p);
+
 
 semd_t *allocSem();
 semd_t *deAllocSem(semd_t **semd_h, semd_t *sem);

@@ -48,6 +48,23 @@ void initPcbs_rec(int count){
 
 /*Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree)*/	
 void freePcb(pcb_t *p){
+	int i=0;
+	p->p_next = NULL;
+	p->p_parent = NULL;
+	p->p_first_child = NULL;
+	p->p_sib = NULL;
+	p->p_semkey = NULL;
+	p->priority = 0; 
+	p->static_priority = 0;
+	p->startTime = 0;
+	p->p_s.entry_hi = 0;
+	p->p_s.cause= 0;
+	p->p_s.status= 0;
+	p->p_s.pc_epc= 0;
+	p->p_s.hi= 0;
+	p->p_s.lo= 0;
+	for(i=0;i<30;i++)
+		p->p_s.gpr[i]= 0;
 	insertPCBList(&pcbfree_h, p);
 	return;
 }
@@ -72,7 +89,7 @@ pcb_t *allocPcb(void){
 
 		return ptemp;	
 	}
-}	
+}
 
 /************ Funzioni per gestire le code di PCB ************/
 

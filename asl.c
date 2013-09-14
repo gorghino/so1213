@@ -32,6 +32,8 @@ semd_t *semd_h; /*Puntatore alla testa della lista dei semafori attivi (ASL)*/
 
 char buffer[1024];
 
+extern int softBlock_count[MAX_CPUS];
+
 
 /************ Funzioni per gestire le liste di SEMafori ************/
 
@@ -116,11 +118,10 @@ semd_t *allocSem(){
 semd_t *deAllocSem(semd_t **semd_h, semd_t *sem){
 	if(*semd_h == sem){
 		semd_t *removed = sem;
+		*semd_h = sem->s_next;
 
 		removed->s_key = NULL;
-		removed->s_next = NULL;
-
-		*semd_h = sem->s_next;
+		removed->s_next = NULL;		
 		insertSEMList(&semdFree_h, removed); /*Reinserisce il semaforo nella semdFree*/
 		return removed;
 	}
@@ -160,12 +161,11 @@ pcb_t* headBlocked(int *key){
 Se il processo non risulta bloccato (cioè è un errore), restituisce NULL, altrimenti restituisce il puntatore al processo*/
 pcb_t* outBlocked(pcb_t *p){
 	semd_t *semd_target = getSemd(p->p_semkey);
-
-	pcb_t *blocked = outProcQ(&(semd_target->s_procQ), p);
-	if(!blocked) /*Se p non esiste nella coda del semaforo*/
-		return NULL;
-	else 
-		return blocked;
+	pcb_t *blocked = NULL;
+	if(semd_target)
+		blocked = outProcQ(&(semd_target->s_procQ), p);
+	/*Se p non esiste nella coda del semaforo*/
+	return blocked;
 }
 
 
@@ -173,29 +173,34 @@ pcb_t* outBlocked(pcb_t *p){
 outChildBlocked() termina anche tutti i processi discendenti di p.
 L'eliminazione avviene visitando l'albero come una DFS*/
 void outChildBlocked(pcb_t *p){
-	semd_t *semd_target = getSemd(p->p_semkey);
+		if(p->p_first_child != NULL)
+			outChildBlocked(p->p_first_child);
 
-	if(p->p_first_child != NULL)
-		outChildBlocked(p->p_first_child);
+		if (p->p_first_child == NULL && p->p_sib != NULL)
+			outChildBlocked(p->p_sib);	
 
-	if (p->p_first_child == NULL && p->p_sib != NULL)
-		outChildBlocked(p->p_sib);	
-
-	if(p->p_first_child == NULL && p->p_sib	== NULL){
-		/*Caso foglia*/
-		outProcQ(&(semd_target->s_procQ), p); /*Rimuovo p dalla coda dei processi del suo semaforo*/
-		outChild(p); /*Rimuovo p dalla lista dei figli del padre*/
-		return;
-	}
+		if(p->p_first_child == NULL && p->p_sib	== NULL){
+			/*Caso foglia*/
+			if(outBlocked(p)); /*Rimuovo p dalla coda dei processi del suo semaforo*/
+				softBlock_count[getPRID()]--;
+			outChild(p); /*Rimuovo p dalla lista dei figli del padre*/
+		}
 }
 
 /*Richiama la funzione fun per ogni elemento della coda di processi del semaforo della ASL con chiave key*/
 void forallBlocked(int *key, void fun(struct pcb_t *pcb, void *), void *arg){
 	semd_t *semd_target = getSemd(key);
-
 	if (!semd_target->s_procQ)
 		return;
 	else
 		forallProcQ(semd_target->s_procQ, fun, arg);
+}
+
+void terminatePcb(pcb_t *p){
+	if(p->p_first_child != NULL)
+		outChildBlocked(p->p_first_child);
+	if(outBlocked(p))
+		softBlock_count[getPRID()]--;
+	outChild(p);
 }
 

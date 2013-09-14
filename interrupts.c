@@ -62,8 +62,13 @@ void interruptHandler(){
 	/*For Interval Timer interrupts that represent a pseudo-clock tick (see Section 3.7.1), perform the V 
 	operation on the nucleus maintained pseudo-clock timer semaphore.*/
 	else if(CAUSE_IP_GET(cause, INT_TIMER)) {
+		/*Exctract pcb and put them into the ready queue*/
+		while ((unblocked = V(&pseudo_clock[cpuID]))){
+
+			insertProcQ(&ready_queue[cpuID], unblocked);
+		}
 		SET_IT(SCHED_PSEUDO_CLOCK);
-		//itoa(INT_TIMER, buffer, 10);
+
 	}
 	
 	/* Disk Devices */

@@ -77,13 +77,16 @@ void schedule(){
 			forallProcQ(ready_queue[cpuID], increment_priority, NULL);
 			//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
 
-			//pRunning[cpuID]->p_s.status |= STATUS_TE;
-			setTIMER(4000); /*4ms*/
+			pRunning[cpuID]->p_s.status |= STATUS_TE;
+
+			pRunning[cpuID]->priority = pRunning[cpuID]->static_priority;
+
+			if(pRunning[cpuID]->startTime == 0)
+				pRunning[cpuID]->startTime = GET_TODLOW;
 
 			current_process[cpuID] = pRunning[cpuID];
-			if(current_process[cpuID]->startTime == 0)
-				current_process[cpuID]->startTime = GET_TODLOW;
 
+			setTIMER(4000);
 			LDST(&(pRunning[cpuID]->p_s));
 		}
 		else{
@@ -94,7 +97,7 @@ void schedule(){
 			if(process_count[cpuID] && softBlock_count[cpuID]){
 				setSTATUS(getSTATUS()|STATUS_IEc|STATUS_INT_UNMASKED|STATUS_TE);
 				stateCPU[cpuID] = WAITING;
-				WAIT();
+				while(1) WAIT();
 				schedule();
 			}
 
@@ -144,13 +147,14 @@ void init(){
 
 	process_count[cpuID]++;
 
-	setSTATUS(STATUS_TE|STATUS_IEc);
+	setSTATUS(STATUS_IEc);
 	schedule();
 }
 
 void increment_priority(struct pcb_t *pcb)
 {
-	pcb->priority++; 
+	if(pcb->priority != 19)
+		pcb->priority++; 
 }
 
 
