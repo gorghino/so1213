@@ -9,4 +9,6 @@ void init();
 void pota();
 void increment_priority();
 
+unsigned int pcb_Lock;
+
 #endif

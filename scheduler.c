@@ -65,9 +65,6 @@ extern state_t *new_old_areas[MAX_CPUS][8];
 extern int process_count[MAX_CPUS];
 
 
-HIDDEN unsigned int pcb_Lock = 1;
-
-
 void schedule(){
 		int cpuID = getPRID();
 		pcb_t *pRunning[MAX_CPUS];
@@ -95,8 +92,8 @@ void schedule(){
 			}
 
 			if(process_count[cpuID] && softBlock_count[cpuID]){
-				setSTATUS(getSTATUS()|STATUS_IE|STATUS_INT_UNMASKED|STATUS_TE);
-				stateCPU[cpuID] = WAITING;
+				int status = getSTATUS() | STATUS_IEc | STATUS_INT_UNMASKED |STATUS_TE;
+				setSTATUS(status);
 				while(1) WAIT();
 				schedule();
 			}
@@ -132,6 +129,7 @@ void init(){
 	}
 
 	/* Extracting the first free pcb */
+	pcb_Lock = 1;
 	while(!CAS(&pcb_Lock, 1, 0)) ;
 	pcb_t* init_process = allocPcb();
 	CAS(&pcb_Lock, 0, 1);
@@ -146,8 +144,6 @@ void init(){
 	SET_IT(SCHED_PSEUDO_CLOCK);
 
 	process_count[cpuID]++;
-
-	setSTATUS(STATUS_IEc);
 	schedule();
 }
 

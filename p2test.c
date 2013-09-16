@@ -288,7 +288,6 @@ void test() {
 	SYSCALL(PASSEREN, (int)&endp5, 0, 0);				  	/* P(endp5)		*/ 
 
 	print("p1 knows p5 ended\n");
-	pota_debug();
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
 
 	/* now for a more rigorous check of process termination */
@@ -428,7 +427,7 @@ void p4() {
 	}
 
 	SYSCALL(VERHOGEN, (int)&synp4, 0, 0);				/* V(synp4)     */
-
+	pota_debug();
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);				/* P(blkp4)     */
 
 	SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* P(synp4)     */
@@ -524,7 +523,6 @@ void p5sys() {
 /* p5 -- SYS5 test process */
 void p5() {
 	print("p5 starts\n");
-
 	/* set up higher level TRAP handlers (new areas) */
 	STST(&pstat_n);  /* pgmtrap new area */
 	pstat_n.pc_epc = pstat_n.reg_t9 = (memaddr)p5prog; /* pgmtrap exceptions */

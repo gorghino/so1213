@@ -55,8 +55,9 @@ void interruptHandler(){
 	/*The processor Local Timer is useful for generating interrupts*/
 	else if(CAUSE_IP_GET(cause, 1)) {
 	  //itoa(1, buffer, 10);*
-		insertProcQ(&ready_queue[cpuID], current_process[cpuID]);	
-		current_process[cpuID] = NULL;
+		setTIMER(4000);
+		//insertProcQ(&ready_queue[cpuID], current_process[cpuID]);	
+		//current_process[cpuID] = NULL;
 	}
 	
 	/* Bus (Interval Timer) */

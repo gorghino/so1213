@@ -106,6 +106,7 @@ void syscallHandler(){
 	the PgmTrap Old Area to RI (Reserved Instruction), and calling Kaya’s PgmTrap
 	exception handler.*/
 	if(current_process[cpuID]->p_s.reg_a0 < 9 && ((((state_t*)SYSBK_OLDAREA)->status << 28) >> 31)){
+	//if (((state_t*)SYSBK_OLDAREA)->status & STATUS_KUp) {
 			//User Mode
 			copyState((state_t*)SYSBK_OLDAREA, (state_t *)PGMTRAP_OLDAREA);
 			((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
@@ -147,9 +148,11 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
-					//addokbuf("TERMINATEPROCESS\n"); 
+					//addokbuf("TERMINATEPROCESS\n");
+					while(!CAS(&pcb_Lock, 1, 0)) ;
 					terminatePcb(current_process[cpuID]);
 					freePcb(current_process[cpuID]);
+					CAS(&pcb_Lock, 0, 1);
 					current_process[cpuID] = NULL;
 					
 					process_count[cpuID]--;
@@ -157,31 +160,38 @@ void syscallHandler(){
 					break;
 
 				case VERHOGEN:
-
+					while(!CAS(&pcb_Lock, 1, 0)) ;
 					//addokbuf("VERHOGEN\n"); 
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
-					if ((unblocked = removeBlocked(semV)) != NULL){
-						softBlock_count[cpuID]--;
-						insertProcQ(&ready_queue[cpuID], unblocked);
-					}
+					if(*semV <= 0)
+						if ((unblocked = removeBlocked(semV)) != NULL){
+							softBlock_count[cpuID]--;
+							insertProcQ(&ready_queue[cpuID], unblocked);
+						}
 					current_process[cpuID]->p_s.pc_epc += 4;
+					CAS(&pcb_Lock, 0, 1);
 					break;
 
 				case PASSEREN:
+					while(!CAS(&pcb_Lock, 1, 0)) ;
 					//addokbuf("PASSEREN\n"); 
-					if((*semP) >= 0)
-						(*semP)--;
+					//if((*semP) >= 0)
+					(*semP)--;
 					if(*semP < 0){
 						/*Se il valore del semaforo è negativo, il processo viene bloccato e accodato */
 						current_process[cpuID]->p_s.pc_epc += 4;
+						
 						insertBlocked(semP, current_process[cpuID]);
 						softBlock_count[cpuID]++;
 						current_process[cpuID] = NULL;
+						CAS(&pcb_Lock, 0, 1);
 						LDST(&scheduler[cpuID]);
 					}
-					else
+					else{
 						current_process[cpuID]->p_s.pc_epc += 4;
+						CAS(&pcb_Lock, 0, 1);
+					}
 					break;
 
 				case SPECTRAPVEC:
