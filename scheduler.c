@@ -95,7 +95,7 @@ void schedule(){
 			}
 
 			if(process_count[cpuID] && softBlock_count[cpuID]){
-				setSTATUS(getSTATUS()|STATUS_IEc|STATUS_INT_UNMASKED|STATUS_TE);
+				setSTATUS(getSTATUS()|STATUS_IE|STATUS_INT_UNMASKED|STATUS_TE);
 				stateCPU[cpuID] = WAITING;
 				while(1) WAIT();
 				schedule();

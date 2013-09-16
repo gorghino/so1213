@@ -53,11 +53,22 @@ state_t *sysBp_new = (state_t *)SYSBK_NEWAREA;
 
 
 void tlbHandler(){
-	addokbuf("tlbHandler: Panico!");
-	PANIC();
+	int cpuID = getPRID();
+	if(current_process[cpuID]->states_array[TLB_NEW] != NULL){
+		copyState(((state_t*)TLB_OLDAREA), (current_process[cpuID]->states_array[TLB_OLD]));
+		copyState((current_process[cpuID]->states_array[TLB_NEW]), &current_process[cpuID]->p_s);
+	}
+	else{
+		/*Else killo il processo*/
+		terminatePcb(current_process[cpuID]);
+		freePcb(current_process[cpuID]);
+		current_process[cpuID] = NULL;
+		process_count[cpuID]--;
+		LDST(&scheduler[cpuID]);
+	}
+	LDST(&current_process[cpuID]->p_s); 
 }
 void trapHandler(){
-	pota_debug2();
 	//addokbuf("trapHandler: Panico!");
 	int cpuID = getPRID();
 	if(current_process[cpuID]->states_array[PGMTRAP_NEW] != NULL){
@@ -69,9 +80,10 @@ void trapHandler(){
 		terminatePcb(current_process[cpuID]);
 		freePcb(current_process[cpuID]);
 		current_process[cpuID] = NULL;
-		process_count[cpuID]--;	
+		process_count[cpuID]--;
+		LDST(&scheduler[cpuID]);
 	}
-	LDST(&scheduler[cpuID]);
+	LDST(&current_process[cpuID]->p_s); 
 }
 
 int*semVV;
@@ -87,7 +99,19 @@ void syscallHandler(){
 
 	copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
 
-	char buffer[1024];
+	//Check User/Kernel mode
+	/*In particular Kaya should simulate a PgmTrap exception when a privileged
+	service is requested in user-mode. This is done by moving the processor state
+	from the SYS/Bp Old Area to the PgmTrap Old Area, setting Cause.ExcCode in
+	the PgmTrap Old Area to RI (Reserved Instruction), and calling Kaya’s PgmTrap
+	exception handler.*/
+	if(current_process[cpuID]->p_s.reg_a0 < 9 && ((((state_t*)SYSBK_OLDAREA)->status << 28) >> 31)){
+			//User Mode
+			copyState((state_t*)SYSBK_OLDAREA, (state_t *)PGMTRAP_OLDAREA);
+			((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
+			trapHandler();
+	}
+
 	switch(cause){
 		case EXC_SYSCALL: 	
 			//addokbuf("SYSCALL\n"); 
@@ -123,7 +147,6 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
-					
 					//addokbuf("TERMINATEPROCESS\n"); 
 					terminatePcb(current_process[cpuID]);
 					freePcb(current_process[cpuID]);
@@ -162,7 +185,7 @@ void syscallHandler(){
 					break;
 
 				case SPECTRAPVEC:
-					pota_debug2(); 
+
 					//addokbuf("SPECTRAPVEC\n"); 
 					/*nel registro a1 ho il tipo di eccezione e da li ho 3 casi. (TLB exceptions, PGMTRAP e SysBp).
 					Nella struttura pcb abbiamo un array [0-5] dove vengono salvati gli stati del processore.
@@ -173,8 +196,8 @@ void syscallHandler(){
 					
 					switch(current_process[cpuID]->p_s.reg_a1){
 						case 0:
-							/*TLB exceptions*/
-							if(current_process[cpuID]->states_array[TLB_OLD]){
+							/*TLB exceptions*/	
+							if(!current_process[cpuID]->states_array[TLB_OLD]){
 								current_process[cpuID]->states_array[TLB_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
 								current_process[cpuID]->states_array[TLB_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
 							}
@@ -190,7 +213,7 @@ void syscallHandler(){
 							break;
 						case 1:
 							/*PGMTRAP exceptions*/
-							if(current_process[cpuID]->states_array[TLB_OLD]){
+							if(!current_process[cpuID]->states_array[PGMTRAP_OLD]){
 								current_process[cpuID]->states_array[PGMTRAP_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
 								current_process[cpuID]->states_array[PGMTRAP_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
 							}
@@ -206,7 +229,7 @@ void syscallHandler(){
 							break;
 						case 2:
 							/*SysBp exceptions*/
-							if(current_process[cpuID]->states_array[TLB_OLD]){
+							if(!current_process[cpuID]->states_array[SYSBREAKPOINT_OLD]){
 								current_process[cpuID]->states_array[SYSBREAKPOINT_OLD] = (state_t*) current_process[cpuID]->p_s.reg_a2;
 								current_process[cpuID]->states_array[SYSBREAKPOINT_NEW] = (state_t*) current_process[cpuID]->p_s.reg_a3;
 							}

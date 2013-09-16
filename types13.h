@@ -13,12 +13,12 @@ typedef struct pcb_t {
 	struct pcb_t* p_first_child;
 	struct pcb_t* p_sib;
 
-	/* processor state, etc */
-	state_t	p_s;
-
 	/* process priority */
 	int	priority;  
 	int static_priority;
+
+	/* processor state, etc */
+	state_t	p_s;
 
 	/* key of the semaphore on which the process is eventually blocked */
 	int	*p_semkey;

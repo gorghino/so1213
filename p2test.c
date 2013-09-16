@@ -275,19 +275,20 @@ void test() {
 	print("p3 is started\n");
   /* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
-	
-	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);		/* start p4     */
 
+	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);		/* start p4     */
+	
 	SYSCALL(CREATEPROCESS, (int)&p5state, 10, 3); 		/* start p5     */
 
 	SYSCALL(CREATEPROCESS, (int)&p6state, 10, 4);		/* start p6		*/
 
 	SYSCALL(CREATEPROCESS, (int)&p7state, 10, 5);		/* start p7		*/
 
+
 	SYSCALL(PASSEREN, (int)&endp5, 0, 0);				  	/* P(endp5)		*/ 
 
 	print("p1 knows p5 ended\n");
-
+	pota_debug();
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
 
 	/* now for a more rigorous check of process termination */
@@ -446,8 +447,9 @@ void p4() {
   
 	print("p4 is OK\n");
 
+
 	SYSCALL(VERHOGEN, (int)&endp4, 0, 0);				/* V(endp4)          */
-	pota_debug2();
+
 	SYSCALL(TERMINATEPROCESS, 0, 0, 0);			/* terminate p4      */
 
 	/* just did a SYS2, so should not get to this point */
@@ -459,7 +461,6 @@ void p4() {
 
 /* p5's program trap handler */
 void p5prog() {
-	pota_debug();
 	unsigned int exeCode = pstat_o.cause;
 	exeCode = (exeCode & CAUSEMASK) >> 2;
 	
@@ -504,7 +505,9 @@ void p5mm() {
 /* void p5sys(unsigned int cause) { */
 void p5sys() {
 	unsigned int p5status = sstat_o.status;
+
 	p5status = (p5status << 28) >> 31; 
+
 	switch(p5status) {
 	case ON:
 		print("High level SYS call from user mode process\n");
@@ -550,6 +553,7 @@ void p5() {
 }
 
 void p5a() {
+
 	unsigned int p5Status;
 	
 	/* generate a TLB exception by turning on VM without setting up the 
@@ -564,6 +568,8 @@ void p5b() {
 	cpu_t		time1, time2;
 
 	SYSCALL(9, 0, 0, 0);
+
+	//pota_debug();
 	/* the first time through, we are in user mode */
 	/* and the P should generate a program trap */
 	SYSCALL(PASSEREN, (int)&endp4, 0, 0);			/* P(endp4)*/
@@ -572,13 +578,15 @@ void p5b() {
 	time1 = 0;
 	time2 = 0;
 	while (time2 - time1 < (CLOCKINTERVAL >> 1))  {
+
 		time1 = GET_TODLOW;
 		SYSCALL(WAITCLOCK, 0, 0, 0);
 		time2 = GET_TODLOW;
 	}
 
+
 	/* if p4 and offspring are really dead, this will increment blkp4 */
-	pota_debug2();
+
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
