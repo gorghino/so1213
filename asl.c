@@ -37,6 +37,7 @@ char buffer[1024];
 
 extern int softBlock_count[MAX_CPUS];
 extern int process_count[MAX_CPUS];
+extern pcb_t *ready_queue[MAX_CPUS];
 
 
 /************ Funzioni per gestire le liste di SEMafori ************/
@@ -181,10 +182,10 @@ void outChildBlocked(pcb_t *p){
 			if(outBlocked(p)){
 				/*Rimuovo p dalla coda dei processi del suo semaforo*/
 				softBlock_count[getPRID()]--;
-				if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
+				//if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
 					semd_t* semd = getSemd(p->p_semkey);
 					(*semd->s_key)++;
-				}
+				//}
 			}
 			outChild(p);
 			if(p->p_first_child)
@@ -203,11 +204,12 @@ void terminatePcb(pcb_t *p){
 		if(outBlocked(p)){
 			/*Rimuovo p dalla coda dei processi del suo semaforo*/
 			softBlock_count[getPRID()]--;
-			if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
+			//if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
 				semd_t* semd = getSemd(p->p_semkey);
 				(*semd->s_key)++;
-			}
+			//}
 		}
+		outProcQ(&ready_queue[getPRID()], p);
 		outChild(p);
 		freePcb(p);
 	} 
