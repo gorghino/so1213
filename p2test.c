@@ -290,7 +290,6 @@ void test() {
 	print("p1 knows p5 ended\n");
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
 
-	pota_debug();
 	/* now for a more rigorous check of process termination */
 	for (p8inc = 0; p8inc < 4; p8inc++) {
 		creation = SYSCALL(CREATEPROCESS, (int)&p8rootstate, 5, p8inc);
@@ -636,6 +635,7 @@ void p8root() {
 	for (grandchild=0; grandchild < NOLEAVES; grandchild++) {
 		SYSCALL(PASSEREN, (int)&endcreate, 0, 0);
 	}
+
 	
 	SYSCALL(VERHOGEN, (int)&endp8, 0, 0);
 

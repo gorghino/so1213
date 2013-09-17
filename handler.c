@@ -60,10 +60,8 @@ void tlbHandler(){
 	}
 	else{
 		/*Else killo il processo*/
-		terminatePcb(current_process[cpuID]);
-		freePcb(current_process[cpuID]);
+		outChildBlocked(current_process[cpuID]);
 		current_process[cpuID] = NULL;
-		process_count[cpuID]--;
 		LDST(&scheduler[cpuID]);
 	}
 	LDST(&current_process[cpuID]->p_s); 
@@ -77,10 +75,8 @@ void trapHandler(){
 	}
 	else{
 		/*Else killo il processo*/
-		terminatePcb(current_process[cpuID]);
-		freePcb(current_process[cpuID]);
+		outChildBlocked(current_process[cpuID]);
 		current_process[cpuID] = NULL;
-		process_count[cpuID]--;
 		LDST(&scheduler[cpuID]);
 	}
 	LDST(&current_process[cpuID]->p_s); 
@@ -148,13 +144,10 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
-					pota_debug2();
 					//addokbuf("TERMINATEPROCESS\n");
-					terminatePcb(current_process[cpuID]);
-					freePcb(current_process[cpuID]);
+					outChildBlocked(current_process[cpuID]);
+					//freePcb(current_process[cpuID]);
 					current_process[cpuID] = NULL;
-					
-					process_count[cpuID]--;
 					LDST(&scheduler[cpuID]);	
 					break;
 
@@ -212,11 +205,8 @@ void syscallHandler(){
 							}
 							else{
 								/*TLB exceptions già impostata. Killo*/
-								terminatePcb(current_process[cpuID]);
-								freePcb(current_process[cpuID]);
+								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
-								
-								process_count[cpuID]--;
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -228,11 +218,8 @@ void syscallHandler(){
 							}
 							else{
 								/*PGMTRAP exceptions già impostata. Killo*/
-								terminatePcb(current_process[cpuID]);
-								freePcb(current_process[cpuID]);
+								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
-								
-								process_count[cpuID]--;
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -244,11 +231,8 @@ void syscallHandler(){
 							}
 							else{
 								/*SysBp exceptions già impostata. Killo*/
-								terminatePcb(current_process[cpuID]);
-								freePcb(current_process[cpuID]);
+								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
-								
-								process_count[cpuID]--;
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -310,10 +294,8 @@ void syscallHandler(){
 					}
 					else{
 						/*Else killo il processo*/
-						terminatePcb(current_process[cpuID]);
-						freePcb(current_process[cpuID]);
+						outChildBlocked(current_process[cpuID]);
 						current_process[cpuID] = NULL;
-						process_count[cpuID]--;
 						LDST(&scheduler[cpuID]);	
 					}
 					break;

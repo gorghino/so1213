@@ -23,10 +23,13 @@
 #include "pcb.e"
 #include "libumps.h"
 #include "p1test.h"
+#include "scheduler.h"
+#include "handler.h"
 
 
 pcb_t pcb_table[MAXPROC]; /*Tabella dei PCB*/
 pcb_t *pcbfree_h = NULL; /*Puntatore alla testa della lista dei PCB liberi*/
+extern int process_count[MAX_CPUS];
 
 
 /************ Funzioni per gestire le liste di PCB ************/
@@ -65,6 +68,7 @@ void freePcb(pcb_t *p){
 	p->p_s.lo= 0;
 	for(i=0;i<30;i++)
 		p->p_s.gpr[i]= 0;
+	process_count[getPRID()]--;
 	insertPCBList(&pcbfree_h, p);
 	return;
 }
