@@ -148,11 +148,10 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
+					pota_debug2();
 					//addokbuf("TERMINATEPROCESS\n");
-					while(!CAS(&pcb_Lock, 1, 0)) ;
 					terminatePcb(current_process[cpuID]);
 					freePcb(current_process[cpuID]);
-					CAS(&pcb_Lock, 0, 1);
 					current_process[cpuID] = NULL;
 					
 					process_count[cpuID]--;

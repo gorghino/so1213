@@ -290,6 +290,7 @@ void test() {
 	print("p1 knows p5 ended\n");
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
 
+	pota_debug();
 	/* now for a more rigorous check of process termination */
 	for (p8inc = 0; p8inc < 4; p8inc++) {
 		creation = SYSCALL(CREATEPROCESS, (int)&p8rootstate, 5, p8inc);
@@ -298,7 +299,6 @@ void test() {
 			print("error in process termination\n");
 			PANIC();
 		}
-
 		SYSCALL(PASSEREN, (int)&endp8, 0, 0);
 	}
 
@@ -427,7 +427,7 @@ void p4() {
 	}
 
 	SYSCALL(VERHOGEN, (int)&synp4, 0, 0);				/* V(synp4)     */
-	pota_debug();
+
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);				/* P(blkp4)     */
 
 	SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* P(synp4)     */
@@ -445,7 +445,6 @@ void p4() {
   	SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* wait for it       */
   
 	print("p4 is OK\n");
-
 
 	SYSCALL(VERHOGEN, (int)&endp4, 0, 0);				/* V(endp4)          */
 
@@ -567,7 +566,6 @@ void p5b() {
 
 	SYSCALL(9, 0, 0, 0);
 
-	//pota_debug();
 	/* the first time through, we are in user mode */
 	/* and the P should generate a program trap */
 	SYSCALL(PASSEREN, (int)&endp4, 0, 0);			/* P(endp4)*/
@@ -584,7 +582,7 @@ void p5b() {
 
 
 	/* if p4 and offspring are really dead, this will increment blkp4 */
-
+	
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */

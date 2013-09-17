@@ -22,6 +22,8 @@
 #include "asl.e"
 #include "utils.h"
 #include "p1test.h"
+#include "main.h"
+#include "scheduler.h"
 
 semd_t semd_table[MAXPROC]; /*Tabella dei semafori*/
 semd_t *semdFree_h; /*Puntatore alla testa della lista dei semafori liberi*/
@@ -181,8 +183,17 @@ void outChildBlocked(pcb_t *p){
 
 		if(p->p_first_child == NULL && p->p_sib	== NULL){
 			/*Caso foglia*/
-			if(outBlocked(p)); /*Rimuovo p dalla coda dei processi del suo semaforo*/
+			if(outBlocked(p)){
+				/*Rimuovo p dalla coda dei processi del suo semaforo*/
+				while(!CAS(&pcb_Lock, 1, 0)) ;
 				softBlock_count[getPRID()]--;
+				//if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
+				semd_t* semd = getSemd(p->p_semkey);
+				(*semd->s_key)++;
+				CAS(&pcb_Lock, 0, 1);	
+				//}
+			} 
+				
 			outChild(p); /*Rimuovo p dalla lista dei figli del padre*/
 		}
 }
@@ -199,8 +210,13 @@ void forallBlocked(int *key, void fun(struct pcb_t *pcb, void *), void *arg){
 void terminatePcb(pcb_t *p){
 	if(p->p_first_child != NULL)
 		outChildBlocked(p->p_first_child);
-	if(outBlocked(p))
+	if(outBlocked(p)){
+		while(!CAS(&pcb_Lock, 1, 0)) ;
 		softBlock_count[getPRID()]--;
+		semd_t* semd = getSemd(p->p_semkey);
+		(*semd->s_key)++;
+		CAS(&pcb_Lock, 0, 1);
+	}	
 	outChild(p);
 }
 
