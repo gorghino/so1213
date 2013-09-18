@@ -43,7 +43,6 @@ void interruptHandler(){
 	pcb_t * unblocked;
 
 	int cpuID = getPRID();
-	stateCPU[cpuID] = RUNNING;
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {

@@ -141,7 +141,6 @@ void init(){
 	init_process->p_s.pc_epc = init_process->p_s.reg_t9 = (memaddr)test; /*p2test*/
 
 	insertProcQ(&ready_queue[cpuID], init_process);
-	stateCPU[cpuID] = RUNNING;
 	/*Sets the global Interval Timer*/
 	SET_IT(SCHED_PSEUDO_CLOCK);
 
