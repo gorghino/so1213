@@ -66,32 +66,28 @@ extern int process_count[MAX_CPUS];
 
 
 void schedule(){
+
 		int cpuID = getPRID();
-		pcb_t *pRunning[MAX_CPUS];
-		//addokbuf("SCHEDULER\n");
-		if((pRunning[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL){
-			
+
+		if((current_process[cpuID] = removeProcQ(&ready_queue[cpuID])) != NULL){
+
 			forallProcQ(ready_queue[cpuID], increment_priority, NULL);
-			//addokbuf("Ready Queue non vuota: CARICO pRunning[cpuID]O\n");
 
-			pRunning[cpuID]->p_s.status |= STATUS_TE;
+			current_process[cpuID]->p_s.status |= STATUS_TE;
+			current_process[cpuID]->priority = current_process[cpuID]->static_priority;
 
-			pRunning[cpuID]->priority = pRunning[cpuID]->static_priority;
-
-			if(pRunning[cpuID]->startTime == 0)
-				pRunning[cpuID]->startTime = GET_TODLOW;
-
-			current_process[cpuID] = pRunning[cpuID];
+			if(current_process[cpuID]->startTime == 0)
+				current_process[cpuID]->startTime = GET_TODLOW;
 
 			setTIMER(4000);
-			LDST(&(pRunning[cpuID]->p_s));
+			LDST(&(current_process[cpuID]->p_s));
 		}
 		else{
 			if(process_count[cpuID] && !softBlock_count[cpuID]){
 				PANIC(); /*Deadlock detection*/
 			}
 
-			if(process_count[cpuID] && softBlock_count[cpuID]){
+			if( (process_count[cpuID] && softBlock_count[cpuID])){
 				int status = getSTATUS() | STATUS_IEc | STATUS_INT_UNMASKED |STATUS_TE;
 				setSTATUS(status);
 				while(1) WAIT();
@@ -124,7 +120,8 @@ void init(){
 		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i);
 
 		if(i > 0){
-			INITCPU(i,&scheduler[i],new_old_areas[i]);
+			stateCPU[cpuID] = STOPPED;
+			//INITCPU(i,&scheduler[i],new_old_areas[i]);
 		}
 	}
 

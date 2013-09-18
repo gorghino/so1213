@@ -261,7 +261,7 @@ void test() {
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
 
-	print("p2 sbloccata e inserita nella readyQ\n");
+	//print("p2 sbloccata e inserita nella readyQ\n");
   /* P1 blocks until p2 finishes and Vs endp2 */
 
 
@@ -312,12 +312,12 @@ void test() {
 
 /* p2 -- semaphore and cputime-SYS test process */
 void p2() {
-
 	int		i;				       /* just to waste time  */
 	cpu_t	now1,now2;		   /* times of day        */
 	cpu_t	cpu_t1, cpu_t2;	 /* cpu time used       */
 
   /* startp2 is initialized to 0. p1 Vs it then waits for p2 termination */
+	pota_debug();
 	SYSCALL(PASSEREN, (int)&startp2, 0, 0);				/* P(startp2)   */
 
 	print("p2 starts\n");

@@ -4,7 +4,6 @@
 #define STATUSMASK 0xFF
 #define TRUE 1
 #define FALSE 0
-#define	MAX_CPUS 1
 
 pcb_t pcb_table[MAXPROC];
 semd_t semd_table[MAXPROC];

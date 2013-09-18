@@ -18,7 +18,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
 #include "handler.h"
 #include "pcb.e"
 #include "asl.e"
@@ -27,6 +26,8 @@
 #include "const13.h"
 #include "uMPStypes.h"
 #include "print.h"
+#include "const13_customized.h"
+#include "main.h"
 
 #define NUM_DEVICES 8
 
@@ -35,8 +36,7 @@ pcb_t *current_process[MAX_CPUS];
 // Conta quanti processi nella coda ready della CPU
 int process_count[MAX_CPUS];
 int softBlock_count[MAX_CPUS];
-int stateCPU[MAX_CPUS]; 
-state_t *new_old_areas[MAX_CPUS][8];	
+int stateCPU[MAX_CPUS]; 	
 
 
 int main(){

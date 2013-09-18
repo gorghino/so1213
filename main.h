@@ -1,9 +1,10 @@
+#ifndef M_H
+#define M_H
+
 #include "libumps.h"
 #include "const13.h"
-
-#define WAITING 0
-#define RUNNING 1
-#define	MAX_CPUS 16
+#include "const13_customized.h"
+#include "base.h"
 
 extern void addokbuf(char *strp);
 extern void test();
@@ -22,3 +23,6 @@ int sem_terminal_read[8];
 int sem_terminal_write[8];
 
 int pseudo_clock[MAX_CPUS];
+state_t *new_old_areas[MAX_CPUS][8];
+
+#endif

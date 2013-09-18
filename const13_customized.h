@@ -9,6 +9,11 @@
 
 #include "base.h"
 
+#define	MAX_CPUS 2
+
+#define STOPPED 0
+#define RUNNING 1
+
 /* Interrupting devices bitmaps addresses  */
 #define INT_BITMAP_DISKDEVICE 0x1000003c
 #define INT_BITMAP_TAPEDEVICE 0x10000040

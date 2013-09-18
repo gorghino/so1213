@@ -25,6 +25,7 @@
 #include "p1test.h"
 #include "scheduler.h"
 #include "handler.h"
+#include "const13_customized.h"
 
 
 pcb_t pcb_table[MAXPROC]; /*Tabella dei PCB*/

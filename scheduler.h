@@ -1,9 +1,10 @@
 #ifndef SYS_H_
 #define SYS_H_
 
-#define	MAX_CPUS 16
+#include "const13_customized.h"
 
 state_t scheduler[MAX_CPUS];
+int stateCPU[MAX_CPUS];
 void schedule();
 void init();
 void pota();

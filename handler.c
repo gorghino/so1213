@@ -39,17 +39,12 @@
 #include "scheduler.h"
 #include "const13_customized.h"
 
- #define	MAX_CPUS 16
 
 extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int process_count[MAX_CPUS];
 extern int softBlock_count[MAX_CPUS];
-state_t *sysBp_old = (state_t *)SYSBK_OLDAREA;
-state_t *pgmTrap_old = (state_t *)PGMTRAP_OLDAREA;
-state_t *tlbTrap_old = (state_t *)TLB_OLDAREA;
-state_t *sysBp_new = (state_t *)SYSBK_NEWAREA;
 
 
 void tlbHandler(){
@@ -67,7 +62,6 @@ void tlbHandler(){
 	LDST(&current_process[cpuID]->p_s); 
 }
 void trapHandler(){
-	//addokbuf("trapHandler: Panico!");
 	int cpuID = getPRID();
 	if(current_process[cpuID]->states_array[PGMTRAP_NEW] != NULL){
 		copyState(((state_t*)PGMTRAP_OLDAREA), (current_process[cpuID]->states_array[PGMTRAP_OLD]));
@@ -82,18 +76,19 @@ void trapHandler(){
 	LDST(&current_process[cpuID]->p_s); 
 }
 
-int*semVV;
-
 void syscallHandler(){
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
 	pcb_t *unblocked;
 	pcb_t *child;
 	state_t *child_state;
-	int *semV = (int*) sysBp_old->reg_a1;
-	int *semP = (int *) sysBp_old->reg_a1;
 
-	copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
+	if(cpuID > 0){
+		pota_debug2();
+		copyState(new_old_areas[cpuID][7], &(current_process[cpuID]->p_s));
+	}
+	else
+		copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
 
 	//Check User/Kernel mode
 	/*In particular Kaya should simulate a PgmTrap exception when a privileged
@@ -104,7 +99,10 @@ void syscallHandler(){
 	if(current_process[cpuID]->p_s.reg_a0 < 9 && ((((state_t*)SYSBK_OLDAREA)->status << 28) >> 31)){
 	//if (((state_t*)SYSBK_OLDAREA)->status & STATUS_KUp) {
 			//User Mode
-			copyState((state_t*)SYSBK_OLDAREA, (state_t *)PGMTRAP_OLDAREA);
+			if(cpuID > 0)
+				copyState(new_old_areas[cpuID][7], new_old_areas[cpuID][5]);
+			else
+				copyState((state_t*)SYSBK_OLDAREA, (state_t *)PGMTRAP_OLDAREA);
 			((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
 			trapHandler();
 	}
@@ -123,20 +121,26 @@ void syscallHandler(){
 					This processor state should be used
 					as the initial state for the newly created process*/
 					child_state = (state_t *)current_process[cpuID]->p_s.reg_a1;
+					int newCPU = current_process[cpuID]->p_s.reg_a3 % MAX_CPUS;
 
 					/*If the new process cannot be created due to lack of resources (for example no more free ProcBlk’s),
 					 an error code of -1 is placed/returned in the caller’s v0, otherwise, 
 					 return the value 0 in the caller’s v0.
 					*/
 					if (( child = allocPcb() ) == NULL)
-						(current_process[cpuID]->p_s).reg_v0 = -1;
+						(current_process[newCPU]->p_s).reg_v0 = -1;
 					else {
-						process_count[cpuID]++;
+						process_count[newCPU]++;
 						copyState(child_state, &(child->p_s));
 						child->priority=(current_process[cpuID]->p_s).reg_a2;
 						child->static_priority = child->priority;
 						insertChild(current_process[cpuID], child);
-						insertProcQ(&ready_queue[cpuID], child);
+						insertProcQ(&ready_queue[newCPU], child);
+
+						if(stateCPU[newCPU] == STOPPED && newCPU > 0 && MAX_CPUS != 1){
+							stateCPU[newCPU] = RUNNING;
+							INITCPU(newCPU,&scheduler[newCPU],new_old_areas[newCPU]);
+						}
 						(current_process[cpuID]->p_s).reg_v0 = 0;
 					}
 
@@ -153,6 +157,7 @@ void syscallHandler(){
 
 				case VERHOGEN:
 					while(!CAS(&pcb_Lock, 1, 0)) ;
+					int *semV = (int*) current_process[cpuID]->p_s.reg_a1;
 					//addokbuf("VERHOGEN\n"); 
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
@@ -167,6 +172,8 @@ void syscallHandler(){
 
 				case PASSEREN:
 					while(!CAS(&pcb_Lock, 1, 0)) ;
+					pota_debug2();
+					int *semP = (int*) current_process[cpuID]->p_s.reg_a1;
 					//addokbuf("PASSEREN\n"); 
 					//if((*semP) >= 0)
 					(*semP)--;

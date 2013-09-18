@@ -150,7 +150,11 @@ void interruptHandler(){
 			}
 			else{
 				device_write_response[devicenumber] = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
-				copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );
+				if(cpuID > 0)
+					copyState(new_old_areas[cpuID][1], &(current_process[cpuID]->p_s));
+				else
+					copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );
+				
 				insertProcQ(&ready_queue[cpuID], current_process[cpuID]);			
 			}
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
@@ -159,10 +163,17 @@ void interruptHandler(){
 	}
 
 	if(current_process[cpuID] != NULL){
-			copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
+			pota_debug2();
+			if(cpuID > 0){
+				pota_debug2();
+				copyState(new_old_areas[cpuID][1], &(current_process[cpuID]->p_s));
+			}
+			else
+				copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
+
 			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);	
 			//LDST(&current_process[cpuID]->p_s); 
 	}
 
-	schedule();
+	LDST(&scheduler[cpuID]);
 }

@@ -21,6 +21,7 @@
 #include "utils.h"
 #include "p1test.h"
 #include "asl.e"
+#include "const13_customized.h"
 
 
 extern pcb_t *current_process[MAX_CPUS];
@@ -96,9 +97,9 @@ int P(int *key, pcb_t *process){
 	semd_t *semd = getSemd(key);
 
 	if(semd !=NULL){
-		if((*semd->s_key) >= 0){
+		//if((*semd->s_key) >= 0){
 			(*semd->s_key)--;
-		}
+		//}
 		if((*semd->s_key) < 0){
 			insertBlocked(key, process);
 			softBlock_count[getPRID()]++;
