@@ -258,9 +258,8 @@ void test() {
 	/* create process p2 */
 	SYSCALL(CREATEPROCESS, (int)&p2state, 19, 1);				/* start p2     */
 	print("p2 was started\n");
-	pota_debug2();
+
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
-	pota_debug2();
 	//print("p2 sbloccata e inserita nella readyQ\n");
   /* P1 blocks until p2 finishes and Vs endp2 */
 
@@ -319,7 +318,6 @@ void p2() {
 
   /* startp2 is initialized to 0. p1 Vs it then waits for p2 termination */
 	SYSCALL(PASSEREN, (int)&startp2, 0, 0);				/* P(startp2)   */
-
 	print("p2 starts\n");
 
 	/* initialize all semaphores in the s[] array */

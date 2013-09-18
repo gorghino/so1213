@@ -284,6 +284,7 @@ void syscallHandler(){
 								LDST(&scheduler[cpuID]);
 							}
 							else{
+								pota_debug();
 								current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];		
 							}
 						}					

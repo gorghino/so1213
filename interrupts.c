@@ -35,8 +35,6 @@ extern int process_count[MAX_CPUS];
 
 
 void interruptHandler(){
-
-
 	char buffer[1024];
 	int cause=getCAUSE();
 	termreg_t *DEVREG;
@@ -130,33 +128,30 @@ void interruptHandler(){
 		//itoa(devicenumber, buffer, 10);
 		//addokbuf(buffer);
 		//addokbuf("\n");
-		if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
+
+		/*if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
 
 			if( (unblocked = V(&sem_terminal_write[devicenumber])) != NULL){	
 				unblocked->p_s.reg_v0 = *TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
-				insertProcQ(&ready_queue[cpuID], unblocked);
+				if(unblocked->numCPU == 1)
+					HALT();
+				insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
 			}
 			else{
 				device_read_response[devicenumber] = *TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
 			}
 
 			*TERMINAL_RECV_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
-		}
+		}*/
 
 		if((*TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
 			if( (unblocked = V(&sem_terminal_read[devicenumber])) != NULL){	
 				unblocked->p_s.reg_v0 = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
-				insertProcQ(&ready_queue[cpuID], unblocked);
+				insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
 			}
-			else{
+			else
 				device_write_response[devicenumber] = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
-				if(cpuID > 0)
-					copyState(&new_old_areas[cpuID][1], &(current_process[cpuID]->p_s));
-				else
-					copyState( ((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s) );
-				
-				insertProcQ(&ready_queue[cpuID], current_process[cpuID]);			
-			}
+
 			*TERMINAL_TRANSM_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
 		}
 		
@@ -164,7 +159,7 @@ void interruptHandler(){
 
 	if(current_process[cpuID] != NULL){
 			if(cpuID > 0)
-				copyState(&new_old_areas[cpuID][1], &(current_process[cpuID]->p_s));
+				copyState(&new_old_areas[cpuID][0], &(current_process[cpuID]->p_s));
 			else
 				copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
 
