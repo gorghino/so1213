@@ -3,7 +3,7 @@
 
 #define WAITING 0
 #define RUNNING 1
-#define	MAX_CPUS 1
+#define	MAX_CPUS 16
 
 extern void addokbuf(char *strp);
 extern void test();
@@ -22,5 +22,3 @@ int sem_terminal_read[8];
 int sem_terminal_write[8];
 
 int pseudo_clock[MAX_CPUS];
-
-int stateCPU[MAX_CPUS]; 

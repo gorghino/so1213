@@ -39,7 +39,7 @@
 #include "scheduler.h"
 #include "const13_customized.h"
 
- #define	MAX_CPUS 1
+ #define	MAX_CPUS 16
 
 extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];

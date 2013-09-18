@@ -1,7 +1,7 @@
 #ifndef SYS_H_
 #define SYS_H_
 
-#define	MAX_CPUS 1
+#define	MAX_CPUS 16
 
 state_t scheduler[MAX_CPUS];
 void schedule();

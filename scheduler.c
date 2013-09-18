@@ -123,15 +123,17 @@ void init(){
 		scheduler[i].pc_epc = scheduler[i].reg_t9 = (memaddr) schedule;
 		scheduler[i].reg_sp = RAMTOP - (FRAME_SIZE * i);
 
-		/*if(i > 0){
+		if(i > 0){
 			INITCPU(i,&scheduler[i],new_old_areas[i]);
-		}*/
+		}
 	}
 
 	/* Extracting the first free pcb */
 	pcb_Lock = 1;
 	while(!CAS(&pcb_Lock, 1, 0)) ;
+
 	pcb_t* init_process = allocPcb();
+	
 	CAS(&pcb_Lock, 0, 1);
 
 	init_process->p_s.status = STATUS_INT_UNMASKED|STATUS_TE|STATUS_IEp;
