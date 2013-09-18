@@ -35,7 +35,7 @@ pcb_t *ready_queue[MAX_CPUS];
 pcb_t *current_process[MAX_CPUS];
 // Conta quanti processi nella coda ready della CPU
 int process_count[MAX_CPUS];
-int softBlock_count[MAX_CPUS];
+int softBlock_count;
 int stateCPU[MAX_CPUS]; 	
 
 

@@ -44,7 +44,7 @@ extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int process_count[MAX_CPUS];
-extern int softBlock_count[MAX_CPUS];
+extern int softBlock_count;
 
 
 void tlbHandler(){
@@ -77,14 +77,13 @@ void trapHandler(){
 }
 
 void syscallHandler(){
-	
+	while(!CAS(&pcb_Lock, 1, 0)) ;	
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
-	if(!cpuID)
-		pota_debug();
 	pcb_t *unblocked;
 	pcb_t *child;
 	state_t *child_state;
+	int *semV, *semP;
 
 	if(cpuID > 0)
 		copyState(&new_old_areas[cpuID][6], &(current_process[cpuID]->p_s));
@@ -138,6 +137,7 @@ void syscallHandler(){
 						copyState(child_state, &(child->p_s));
 						child->priority=(current_process[cpuID]->p_s).reg_a2;
 						child->static_priority = child->priority;
+						child->numCPU = newCPU;
 						insertChild(current_process[cpuID], child);
 						insertProcQ(&ready_queue[newCPU], child);
 
@@ -156,27 +156,25 @@ void syscallHandler(){
 					outChildBlocked(current_process[cpuID]);
 					//freePcb(current_process[cpuID]);
 					current_process[cpuID] = NULL;
+					CAS(&pcb_Lock, 0, 1);
 					LDST(&scheduler[cpuID]);	
 					break;
 
 				case VERHOGEN:
-					while(!CAS(&pcb_Lock, 1, 0)) ;
-					int *semV = (int*) current_process[cpuID]->p_s.reg_a1;
+					semV = (int*) current_process[cpuID]->p_s.reg_a1;
 					//addokbuf("VERHOGEN\n"); 
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
 					if(*semV <= 0)
 						if ((unblocked = removeBlocked(semV)) != NULL){
-							softBlock_count[cpuID]--;
-							insertProcQ(&ready_queue[cpuID], unblocked);
+							softBlock_count--;
+							insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
 						}
 					current_process[cpuID]->p_s.pc_epc += 4;
-					CAS(&pcb_Lock, 0, 1);
 					break;
 
 				case PASSEREN:
-					while(!CAS(&pcb_Lock, 1, 0)) ;
-					int *semP = (int*) current_process[cpuID]->p_s.reg_a1;
+					semP = (int*) current_process[cpuID]->p_s.reg_a1;
 					//addokbuf("PASSEREN\n"); 
 					//if((*semP) >= 0)
 					(*semP)--;
@@ -185,14 +183,13 @@ void syscallHandler(){
 						current_process[cpuID]->p_s.pc_epc += 4;
 						
 						insertBlocked(semP, current_process[cpuID]);
-						softBlock_count[cpuID]++;
+						softBlock_count++;
 						current_process[cpuID] = NULL;
 						CAS(&pcb_Lock, 0, 1);
 						LDST(&scheduler[cpuID]);
 					}
 					else{
 						current_process[cpuID]->p_s.pc_epc += 4;
-						CAS(&pcb_Lock, 0, 1);
 					}
 					break;
 
@@ -217,6 +214,7 @@ void syscallHandler(){
 								/*TLB exceptions già impostata. Killo*/
 								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
+								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -230,6 +228,7 @@ void syscallHandler(){
 								/*PGMTRAP exceptions già impostata. Killo*/
 								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
+								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -243,6 +242,7 @@ void syscallHandler(){
 								/*SysBp exceptions già impostata. Killo*/
 								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
+								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -259,6 +259,7 @@ void syscallHandler(){
 					current_process[cpuID]->p_s.pc_epc += 4;
 					if(P(&pseudo_clock[cpuID], current_process[cpuID])){
 						current_process[cpuID] = NULL;
+						CAS(&pcb_Lock, 0, 1);
 						LDST(&scheduler[cpuID]);
 					}
 					break;
@@ -279,6 +280,7 @@ void syscallHandler(){
 							//Caso write
 							if(P(&sem_terminal_read[devNumber], current_process[cpuID])){
 								current_process[cpuID] = NULL;
+								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);
 							}
 							else{
@@ -288,6 +290,7 @@ void syscallHandler(){
 						else{
 							//Caso read
 							if(P(&sem_terminal_write[devNumber], current_process[cpuID])){
+								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);
 							}
 							else
@@ -306,6 +309,7 @@ void syscallHandler(){
 						/*Else killo il processo*/
 						outChildBlocked(current_process[cpuID]);
 						current_process[cpuID] = NULL;
+						CAS(&pcb_Lock, 0, 1);
 						LDST(&scheduler[cpuID]);	
 					}
 					break;
@@ -317,5 +321,6 @@ void syscallHandler(){
 			/*addokbuf("BREAKPOINT\n");*/
 			break;
 	}
+	CAS(&pcb_Lock, 0, 1);
 	LDST(&current_process[cpuID]->p_s); 
 }

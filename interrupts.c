@@ -163,10 +163,8 @@ void interruptHandler(){
 	}
 
 	if(current_process[cpuID] != NULL){
-			if(cpuID > 0){
-				pota_debug2();
+			if(cpuID > 0)
 				copyState(&new_old_areas[cpuID][1], &(current_process[cpuID]->p_s));
-			}
 			else
 				copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
 

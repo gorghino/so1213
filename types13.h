@@ -26,6 +26,8 @@ typedef struct pcb_t {
 	/*Tempo di inizio esecuzione*/
 	int startTime;
 
+	int numCPU;
+
 	//stati array
 	
 	state_t*			states_array[6];

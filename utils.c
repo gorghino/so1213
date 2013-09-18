@@ -27,7 +27,7 @@
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int process_count[MAX_CPUS];
-extern int softBlock_count[MAX_CPUS];
+extern int softBlock_count;
 
 unsigned int device_read_response[DEV_PER_INT];
 unsigned int device_write_response[DEV_PER_INT];
@@ -102,7 +102,7 @@ int P(int *key, pcb_t *process){
 		//}
 		if((*semd->s_key) < 0){
 			insertBlocked(key, process);
-			softBlock_count[getPRID()]++;
+			softBlock_count++;
 			return TRUE; //Mi blocco
 		}
 		else
@@ -114,7 +114,7 @@ int P(int *key, pcb_t *process){
 		if(semd !=NULL)
 			if((*semd->s_key) >= 0)
 				(*semd->s_key)--;
-		softBlock_count[getPRID()]++;
+		softBlock_count++;
 		return TRUE;
 	}
 }
@@ -126,7 +126,7 @@ pcb_t* V(int* key){
 		(*semd->s_key)++;		
 		if((*semd->s_key) >= 0){
 			unblocked = removeBlocked(key);
-			softBlock_count[getPRID()]--;
+			softBlock_count--;
 			return unblocked;
 		}
 	}

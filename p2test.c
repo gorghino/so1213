@@ -258,9 +258,9 @@ void test() {
 	/* create process p2 */
 	SYSCALL(CREATEPROCESS, (int)&p2state, 19, 1);				/* start p2     */
 	print("p2 was started\n");
-
+	pota_debug2();
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
-
+	pota_debug2();
 	//print("p2 sbloccata e inserita nella readyQ\n");
   /* P1 blocks until p2 finishes and Vs endp2 */
 
@@ -272,7 +272,8 @@ void test() {
 		print("error: p1/p2 synchronization bad\n");
 	
 	SYSCALL(CREATEPROCESS, (int)&p3state, 10, 1);				/* start p3  */
-	print("p3 is started\n");
+
+	print("a3 is started\n");
   /* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
 

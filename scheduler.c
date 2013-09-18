@@ -59,7 +59,7 @@ extern void strreverse();
 
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
-extern int softBlock_count[MAX_CPUS];
+extern int softBlock_count;
 extern state_t new_old_areas[MAX_CPUS][8];	
 // Conta quanti processi nella coda ready della CPU
 extern int process_count[MAX_CPUS];
@@ -75,19 +75,22 @@ void schedule(){
 
 			current_process[cpuID]->p_s.status |= STATUS_TE;
 			current_process[cpuID]->priority = current_process[cpuID]->static_priority;
+			current_process[cpuID]->numCPU = cpuID;
 
 			if(current_process[cpuID]->startTime == 0)
 				current_process[cpuID]->startTime = GET_TODLOW;
+
+
 
 			setTIMER(4000);
 			LDST(&(current_process[cpuID]->p_s));
 		}
 		else{
-			if(process_count[cpuID] && !softBlock_count[cpuID]){
+			if(process_count[cpuID] && !softBlock_count){
 				PANIC(); /*Deadlock detection*/
 			}
 
-			if( (process_count[cpuID] && softBlock_count[cpuID])){
+			if( (process_count[cpuID] && softBlock_count)){
 				int status = getSTATUS() | STATUS_IEc | STATUS_INT_UNMASKED |STATUS_TE;
 				setSTATUS(status);
 				while(1) WAIT();
