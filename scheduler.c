@@ -60,7 +60,7 @@ extern void strreverse();
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int softBlock_count[MAX_CPUS];
-extern state_t *new_old_areas[MAX_CPUS][8];	
+extern state_t new_old_areas[MAX_CPUS][8];	
 // Conta quanti processi nella coda ready della CPU
 extern int process_count[MAX_CPUS];
 

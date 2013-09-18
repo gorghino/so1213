@@ -77,16 +77,17 @@ void trapHandler(){
 }
 
 void syscallHandler(){
+	
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
+	if(!cpuID)
+		pota_debug();
 	pcb_t *unblocked;
 	pcb_t *child;
 	state_t *child_state;
 
-	if(cpuID > 0){
-		pota_debug2();
-		copyState(new_old_areas[cpuID][7], &(current_process[cpuID]->p_s));
-	}
+	if(cpuID > 0)
+		copyState(&new_old_areas[cpuID][6], &(current_process[cpuID]->p_s));
 	else
 		copyState(((state_t*)SYSBK_OLDAREA), &(current_process[cpuID]->p_s));
 
@@ -99,11 +100,14 @@ void syscallHandler(){
 	if(current_process[cpuID]->p_s.reg_a0 < 9 && ((((state_t*)SYSBK_OLDAREA)->status << 28) >> 31)){
 	//if (((state_t*)SYSBK_OLDAREA)->status & STATUS_KUp) {
 			//User Mode
-			if(cpuID > 0)
-				copyState(new_old_areas[cpuID][7], new_old_areas[cpuID][5]);
-			else
+			if(cpuID > 0){
+				copyState(&new_old_areas[cpuID][6], &new_old_areas[cpuID][4]);
+				new_old_areas[cpuID][4].cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
+			}
+			else{
 				copyState((state_t*)SYSBK_OLDAREA, (state_t *)PGMTRAP_OLDAREA);
-			((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
+				((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( new_old_areas[cpuID][4].cause ), EXC_RESERVEDINSTR);
+			}
 			trapHandler();
 	}
 
@@ -139,7 +143,7 @@ void syscallHandler(){
 
 						if(stateCPU[newCPU] == STOPPED && newCPU > 0 && MAX_CPUS != 1){
 							stateCPU[newCPU] = RUNNING;
-							INITCPU(newCPU,&scheduler[newCPU],new_old_areas[newCPU]);
+							INITCPU(newCPU,&scheduler[newCPU],&new_old_areas[newCPU]);
 						}
 						(current_process[cpuID]->p_s).reg_v0 = 0;
 					}
@@ -172,7 +176,6 @@ void syscallHandler(){
 
 				case PASSEREN:
 					while(!CAS(&pcb_Lock, 1, 0)) ;
-					pota_debug2();
 					int *semP = (int*) current_process[cpuID]->p_s.reg_a1;
 					//addokbuf("PASSEREN\n"); 
 					//if((*semP) >= 0)

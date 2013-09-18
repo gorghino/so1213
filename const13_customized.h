@@ -52,6 +52,16 @@
 	(*dest).lo=(*source).lo;\
 })
 
+
+
+/* Addresses for Inter-Processor Interrupts. */
+#define IPI_INBOX ((memaddr*) 0x10000400)
+#define IPI_OUTBOX ((memaddr*) 0x10000404)
+
+/* Macros to send an IPI to the processor with specified PRID and Acknowledge an IPI */
+#define SEND_IPI(i) *IPI_OUTBOX = (1 << (i + 8)) + 1
+#define ACK_IPI *IPI_INBOX = 1
+
 #endif
 
 

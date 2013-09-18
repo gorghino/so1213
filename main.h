@@ -23,6 +23,6 @@ int sem_terminal_read[8];
 int sem_terminal_write[8];
 
 int pseudo_clock[MAX_CPUS];
-state_t *new_old_areas[MAX_CPUS][8];
+state_t new_old_areas[MAX_CPUS][8];
 
 #endif

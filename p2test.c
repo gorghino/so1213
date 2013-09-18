@@ -317,7 +317,6 @@ void p2() {
 	cpu_t	cpu_t1, cpu_t2;	 /* cpu time used       */
 
   /* startp2 is initialized to 0. p1 Vs it then waits for p2 termination */
-	pota_debug();
 	SYSCALL(PASSEREN, (int)&startp2, 0, 0);				/* P(startp2)   */
 
 	print("p2 starts\n");
