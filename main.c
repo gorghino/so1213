@@ -114,8 +114,9 @@ int main(){
 	for (i=0; i<MAX_CPUS;i++){
     	ready_queue[i] = NULL; /*Puntatore alla testa della ready Queue*/
     	process_count[i] = 0;  
-    	pseudo_clock[i] = 0; 	
+    		
     }
+    pseudo_clock = 0; 
 
     /*Initialize all nucleus maintained semaphores. 
     	In addition to the above nucleus variables, there is one semaphore variable for each external (sub)device
@@ -134,6 +135,13 @@ int main(){
 		sem_terminal_read[j] = 0;
 		sem_terminal_write[j] = 0;
 	}
+
+	//semArray[0] = semPV
+	//semArray[1] = semClock
+	//semArray[2] = semScheduler
+	for(j=0;j<3;j++)
+		semArray[j] = 1;
+
 
 	/*Instantiate a single process and place its ProcBlk in the Ready Queue. A
 		process is instantiated by allocating a ProcBlk (i.e. allocPcb()), and

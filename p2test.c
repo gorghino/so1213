@@ -272,7 +272,7 @@ void test() {
 	
 	SYSCALL(CREATEPROCESS, (int)&p3state, 10, 1);				/* start p3  */
 
-	print("a3 is started\n");
+	print("p3 is started\n");
   /* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
 
@@ -374,7 +374,6 @@ void p3() {
 
 	time1 = 0;
 	time2 = 0;
-	
 	/* loop until we are delayed at least half of clock V interval */
 	while ((time2 - time1) < (CLOCKINTERVAL >> 1) )  {
 		time1 = GET_TODLOW;			/* time of day     */

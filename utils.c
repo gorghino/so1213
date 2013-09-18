@@ -22,7 +22,7 @@
 #include "p1test.h"
 #include "asl.e"
 #include "const13_customized.h"
-
+#include "main.h"
 
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
@@ -95,7 +95,7 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 
 int P(int *key, pcb_t *process){
 	semd_t *semd = getSemd(key);
-
+	lock(semPV);
 	if(semd !=NULL){
 		//if((*semd->s_key) >= 0){
 			(*semd->s_key)--;
@@ -103,10 +103,13 @@ int P(int *key, pcb_t *process){
 		if((*semd->s_key) < 0){
 			insertBlocked(key, process);
 			softBlock_count++;
+			unlock(semPV);
 			return TRUE; //Mi blocco
 		}
-		else
+		else{
+			unlock(semPV);
 			return FALSE; //Non mi blocco
+		}
 	}
 	else{
 		insertBlocked(key, process); // Alloca il semaforo se non esiste
@@ -115,22 +118,28 @@ int P(int *key, pcb_t *process){
 			if((*semd->s_key) >= 0)
 				(*semd->s_key)--;
 		softBlock_count++;
+		unlock(semPV);
 		return TRUE;
 	}
 }
 
 pcb_t* V(int* key){	
 	semd_t *semd;
+	lock(semPV);
 	pcb_t *unblocked;
 	if((semd = getSemd(key))!=NULL){
 		(*semd->s_key)++;		
 		if((*semd->s_key) >= 0){
 			unblocked = removeBlocked(key);
 			softBlock_count--;
+			unlock(semPV);
 			return unblocked;
 		}
 	}
-
+	else{
+		
+	}
+	unlock(semPV);
 	return NULL;
 
 }
@@ -206,3 +215,11 @@ void pota_debug2(){
 	return;
 }
 
+
+void lock(int semkey){
+	while (!CAS(&semArray[semkey],1,0)) ;
+}
+
+void unlock(int semkey){
+	CAS(&semArray[semkey],0,1);
+}

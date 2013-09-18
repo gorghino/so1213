@@ -9,7 +9,7 @@
 
 #include "base.h"
 
-#define	MAX_CPUS 2
+#define	MAX_CPUS 16
 
 #define STOPPED 0
 #define RUNNING 1
@@ -61,6 +61,10 @@
 /* Macros to send an IPI to the processor with specified PRID and Acknowledge an IPI */
 #define SEND_IPI(i) *IPI_OUTBOX = (1 << (i + 8)) + 1
 #define ACK_IPI *IPI_INBOX = 1
+
+#define semPV 0
+#define semClock 1
+#define semScheduler 2
 
 #endif
 

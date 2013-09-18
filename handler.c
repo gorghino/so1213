@@ -50,7 +50,10 @@ extern int softBlock_count;
 void tlbHandler(){
 	int cpuID = getPRID();
 	if(current_process[cpuID]->states_array[TLB_NEW] != NULL){
-		copyState(((state_t*)TLB_OLDAREA), (current_process[cpuID]->states_array[TLB_OLD]));
+		if(cpuID > 0)
+			copyState(&new_old_areas[cpuID][2], (current_process[cpuID]->states_array[TLB_OLD]));
+		else
+			copyState(((state_t*)TLB_OLDAREA), (current_process[cpuID]->states_array[TLB_OLD]));
 		copyState((current_process[cpuID]->states_array[TLB_NEW]), &current_process[cpuID]->p_s);
 	}
 	else{
@@ -64,7 +67,10 @@ void tlbHandler(){
 void trapHandler(){
 	int cpuID = getPRID();
 	if(current_process[cpuID]->states_array[PGMTRAP_NEW] != NULL){
-		copyState(((state_t*)PGMTRAP_OLDAREA), (current_process[cpuID]->states_array[PGMTRAP_OLD]));
+		if(cpuID > 0)
+			copyState(&new_old_areas[cpuID][4], (current_process[cpuID]->states_array[PGMTRAP_OLD]));
+		else
+			copyState(((state_t*)PGMTRAP_OLDAREA), (current_process[cpuID]->states_array[PGMTRAP_OLD]));
 		copyState((current_process[cpuID]->states_array[PGMTRAP_NEW]), &current_process[cpuID]->p_s);
 	}
 	else{
@@ -77,7 +83,6 @@ void trapHandler(){
 }
 
 void syscallHandler(){
-	while(!CAS(&pcb_Lock, 1, 0)) ;	
 	int cause = CAUSE_EXCCODE_GET(getCAUSE());
 	int cpuID = getPRID();
 	pcb_t *unblocked;
@@ -96,16 +101,16 @@ void syscallHandler(){
 	from the SYS/Bp Old Area to the PgmTrap Old Area, setting Cause.ExcCode in
 	the PgmTrap Old Area to RI (Reserved Instruction), and calling Kaya’s PgmTrap
 	exception handler.*/
-	if(current_process[cpuID]->p_s.reg_a0 < 9 && ((((state_t*)SYSBK_OLDAREA)->status << 28) >> 31)){
+	if(current_process[cpuID]->p_s.reg_a0 < 9 && ( (current_process[cpuID]->p_s.status << 28) >> 31)){
 	//if (((state_t*)SYSBK_OLDAREA)->status & STATUS_KUp) {
 			//User Mode
 			if(cpuID > 0){
 				copyState(&new_old_areas[cpuID][6], &new_old_areas[cpuID][4]);
-				new_old_areas[cpuID][4].cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
+				new_old_areas[cpuID][4].cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( new_old_areas[cpuID][4].cause), EXC_RESERVEDINSTR);
 			}
 			else{
 				copyState((state_t*)SYSBK_OLDAREA, (state_t *)PGMTRAP_OLDAREA);
-				((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( new_old_areas[cpuID][4].cause ), EXC_RESERVEDINSTR);
+				((state_t *)PGMTRAP_OLDAREA)->cause = CAUSE_EXCCODE_SET( CAUSE_EXCCODE_GET( ((state_t *)PGMTRAP_OLDAREA)->cause ), EXC_RESERVEDINSTR);
 			}
 			trapHandler();
 	}
@@ -130,8 +135,11 @@ void syscallHandler(){
 					 an error code of -1 is placed/returned in the caller’s v0, otherwise, 
 					 return the value 0 in the caller’s v0.
 					*/
-					if (( child = allocPcb() ) == NULL)
+					lock(semScheduler);
+					if (( child = allocPcb() ) == NULL){
 						(current_process[newCPU]->p_s).reg_v0 = -1;
+						unlock(semScheduler);
+					}
 					else {
 						process_count[newCPU]++;
 						copyState(child_state, &(child->p_s));
@@ -145,6 +153,7 @@ void syscallHandler(){
 							stateCPU[newCPU] = RUNNING;
 							INITCPU(newCPU,&scheduler[newCPU],&new_old_areas[newCPU]);
 						}
+						unlock(semScheduler);
 						(current_process[cpuID]->p_s).reg_v0 = 0;
 					}
 
@@ -152,16 +161,19 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
+					pota_debug();
+					lock(semScheduler);
 					//addokbuf("TERMINATEPROCESS\n");
 					outChildBlocked(current_process[cpuID]);
 					//freePcb(current_process[cpuID]);
 					current_process[cpuID] = NULL;
-					CAS(&pcb_Lock, 0, 1);
+					unlock(semScheduler);
 					LDST(&scheduler[cpuID]);	
 					break;
 
 				case VERHOGEN:
 					semV = (int*) current_process[cpuID]->p_s.reg_a1;
+					lock(semPV);
 					//addokbuf("VERHOGEN\n"); 
 					(*semV)++;
 					/* Se ci sono processi bloccati, il primo viene tolto dalla coda e messo in readyQueue*/
@@ -171,10 +183,12 @@ void syscallHandler(){
 							insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
 						}
 					current_process[cpuID]->p_s.pc_epc += 4;
+					unlock(semPV);
 					break;
 
 				case PASSEREN:
 					semP = (int*) current_process[cpuID]->p_s.reg_a1;
+					lock(semPV);
 					//addokbuf("PASSEREN\n"); 
 					//if((*semP) >= 0)
 					(*semP)--;
@@ -185,11 +199,12 @@ void syscallHandler(){
 						insertBlocked(semP, current_process[cpuID]);
 						softBlock_count++;
 						current_process[cpuID] = NULL;
-						CAS(&pcb_Lock, 0, 1);
+						unlock(semPV);
 						LDST(&scheduler[cpuID]);
 					}
 					else{
 						current_process[cpuID]->p_s.pc_epc += 4;
+						unlock(semPV);
 					}
 					break;
 
@@ -214,7 +229,6 @@ void syscallHandler(){
 								/*TLB exceptions già impostata. Killo*/
 								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
-								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -228,7 +242,6 @@ void syscallHandler(){
 								/*PGMTRAP exceptions già impostata. Killo*/
 								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
-								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -242,7 +255,6 @@ void syscallHandler(){
 								/*SysBp exceptions già impostata. Killo*/
 								outChildBlocked(current_process[cpuID]);
 								current_process[cpuID] = NULL;
-								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);	
 							}
 							break;
@@ -257,11 +269,13 @@ void syscallHandler(){
 					
 				case WAITCLOCK: 
 					current_process[cpuID]->p_s.pc_epc += 4;
-					if(P(&pseudo_clock[cpuID], current_process[cpuID])){
+					lock(semClock);
+					if(P(&pseudo_clock, current_process[cpuID])){
 						current_process[cpuID] = NULL;
-						CAS(&pcb_Lock, 0, 1);
+						unlock(semClock);
 						LDST(&scheduler[cpuID]);
 					}
+					unlock(semClock);
 					break;
 
 				/*int SYSCALL(WAITIO, int intNo, int dnum, int waitForTermRead)	
@@ -278,39 +292,37 @@ void syscallHandler(){
 
 						if(!(current_process[cpuID]->p_s.reg_a3)){
 							//Caso write
-							if(P(&sem_terminal_read[devNumber], current_process[cpuID])){
+							if(device_write_response[(current_process[cpuID]->p_s.reg_a2)] == NULL && P(&sem_terminal_read[devNumber], current_process[cpuID])){
 								current_process[cpuID] = NULL;
-								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);
 							}
-							else{
-								pota_debug();
+							else
 								current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];		
-							}
 						}					
 						else{
 							//Caso read
 							if(P(&sem_terminal_write[devNumber], current_process[cpuID])){
-								CAS(&pcb_Lock, 0, 1);
 								LDST(&scheduler[cpuID]);
 							}
 							else
 								current_process[cpuID]->p_s.reg_v0 = device_read_response[current_process[cpuID]->p_s.reg_a2];			
 						}
-						//insertProcQ(&ready_queue[cpuID], current_process[cpuID]);
 					}
 					break;
 				default:
 					/*Viene chiamata una SYSCALL fuori range. Controllo se è stato specificato SYS5*/
 					if(current_process[cpuID]->states_array[SYSBREAKPOINT_NEW] != NULL){
-						copyState(((state_t*)SYSBK_OLDAREA), (current_process[cpuID]->states_array[SYSBREAKPOINT_OLD]));
+						if(cpuID > 0)
+							copyState(&new_old_areas[cpuID][6], (current_process[cpuID]->states_array[SYSBREAKPOINT_OLD]));
+						else
+							copyState(((state_t*)SYSBK_OLDAREA), (current_process[cpuID]->states_array[SYSBREAKPOINT_OLD]));
 						copyState((current_process[cpuID]->states_array[SYSBREAKPOINT_NEW]), &current_process[cpuID]->p_s);
 					}
 					else{
+						pota_debug();
 						/*Else killo il processo*/
 						outChildBlocked(current_process[cpuID]);
 						current_process[cpuID] = NULL;
-						CAS(&pcb_Lock, 0, 1);
 						LDST(&scheduler[cpuID]);	
 					}
 					break;
@@ -322,6 +334,5 @@ void syscallHandler(){
 			/*addokbuf("BREAKPOINT\n");*/
 			break;
 	}
-	CAS(&pcb_Lock, 0, 1);
 	LDST(&current_process[cpuID]->p_s); 
 }

@@ -86,7 +86,7 @@ void schedule(){
 			LDST(&(current_process[cpuID]->p_s));
 		}
 		else{
-			if(process_count[cpuID] && !softBlock_count){
+			if(process_count[cpuID] && !softBlock_count && !cpuID){
 				PANIC(); /*Deadlock detection*/
 			}
 
@@ -97,9 +97,14 @@ void schedule(){
 				schedule();
 			}
 
-			if(!process_count[cpuID]){
+			if(!process_count[cpuID] && !cpuID){
 				//addokbuf("Spengo\n");
 				HALT();
+			}
+			else{
+				int status = getSTATUS() | STATUS_IEc | STATUS_INT_UNMASKED |STATUS_TE;
+				setSTATUS(status);
+				while(1) WAIT();
 			}		
 		}
 }

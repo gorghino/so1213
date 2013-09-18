@@ -62,11 +62,13 @@ void interruptHandler(){
 	operation on the nucleus maintained pseudo-clock timer semaphore.*/
 	else if(CAUSE_IP_GET(cause, INT_TIMER)) {
 		/*Exctract pcb and put them into the ready queue*/
-		while ((unblocked = V(&pseudo_clock[cpuID]))){
+		lock(semClock);
+		while ((unblocked = V(&pseudo_clock))){
 
-			insertProcQ(&ready_queue[cpuID], unblocked);
+			insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
 		}
 		SET_IT(SCHED_PSEUDO_CLOCK);
+		unlock(semClock);
 
 	}
 	
@@ -124,17 +126,10 @@ void interruptHandler(){
 		
 		int devicenumber = finddevicenumber((memaddr*)INT_BITMAP_TERMINALDEVICE);
 
-		//addokbuf("Device register\n");
-		//itoa(devicenumber, buffer, 10);
-		//addokbuf(buffer);
-		//addokbuf("\n");
-
-		/*if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
+		if((*TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
 
 			if( (unblocked = V(&sem_terminal_write[devicenumber])) != NULL){	
 				unblocked->p_s.reg_v0 = *TERMINAL_RECV_STATUS(INT_TERMINAL, devicenumber);
-				if(unblocked->numCPU == 1)
-					HALT();
 				insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
 			}
 			else{
@@ -142,9 +137,12 @@ void interruptHandler(){
 			}
 
 			*TERMINAL_RECV_COMMAND(INT_TERMINAL, devicenumber) = DEV_C_ACK;
-		}*/
+		}
 
+
+		//QUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 		if((*TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber) & STATUSMASK) != DEV_S_READY) {
+			
 			if( (unblocked = V(&sem_terminal_read[devicenumber])) != NULL){	
 				unblocked->p_s.reg_v0 = *TERMINAL_TRANSM_STATUS(INT_TERMINAL, devicenumber);
 				insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
@@ -163,7 +161,7 @@ void interruptHandler(){
 			else
 				copyState(((state_t*)INT_OLDAREA), &(current_process[cpuID]->p_s));
 
-			insertProcQ(&ready_queue[cpuID], current_process[cpuID]);	
+			insertProcQ(&ready_queue[current_process[cpuID]->numCPU], current_process[cpuID]);	
 			//LDST(&current_process[cpuID]->p_s); 
 	}
 

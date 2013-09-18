@@ -69,7 +69,8 @@ void freePcb(pcb_t *p){
 	p->p_s.lo= 0;
 	for(i=0;i<30;i++)
 		p->p_s.gpr[i]= 0;
-	process_count[getPRID()]--;
+	process_count[p->numCPU]--;
+	p->numCPU = -1;
 	insertPCBList(&pcbfree_h, p);
 	return;
 }

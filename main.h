@@ -22,7 +22,9 @@ int sem_printer[8];
 int sem_terminal_read[8];
 int sem_terminal_write[8];
 
-int pseudo_clock[MAX_CPUS];
+int pseudo_clock;
 state_t new_old_areas[MAX_CPUS][8];
+
+int semArray[3];
 
 #endif

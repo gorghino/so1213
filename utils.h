@@ -32,3 +32,6 @@ void strreverse();
 void itoa();
 void pota_debug();
 void pota_debug2();
+
+void lock(int semkey);
+void unlock(int semkey);
