@@ -112,14 +112,16 @@ int P(int *key, pcb_t *process){
 		}
 	}
 	else{
-		insertBlocked(key, process); // Alloca il semaforo se non esiste
-		semd_t *semd = getSemd(key);
-		if(semd !=NULL)
-			if((*semd->s_key) >= 0)
-				(*semd->s_key)--;
-		softBlock_count++;
+		(*key)--;
+		if((*key) < 0){
+			insertBlocked(key, process); // Alloca il semaforo se non esiste
+			unlock(semPV);
+			softBlock_count++;
+			unlock(semPV);
+			return TRUE; //Mi blocco
+		}
 		unlock(semPV);
-		return TRUE;
+		return FALSE; //Non mi blocco
 	}
 }
 
@@ -137,7 +139,14 @@ pcb_t* V(int* key){
 		}
 	}
 	else{
-		
+		/*semd_t *semd_target = allocSem();
+		if (semd_target == NULL){
+			unlock(semPV);
+			return NULL;
+		}
+		semd_target->s_key = key;
+		insertSEMList(&semd_h, semd_target); */
+		(*key)++;
 	}
 	unlock(semPV);
 	return NULL;

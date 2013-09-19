@@ -94,7 +94,8 @@ int insertBlocked(int *key, pcb_t* p){
 			semd_target->s_key = key;
 			insertSEMList(&semd_h, semd_target); /*Alloco semd_target nella ASL*/
 			p->p_semkey = key;
-			insertProcQ(&(semd_target->s_procQ), p); /*Inserisco p nella coda di processi bloccati di semd_target*/
+			if(*key <= 0)
+				insertProcQ(&(semd_target->s_procQ), p); /*Inserisco p nella coda di processi bloccati di semd_target*/
 			return FALSE;
 			}
 		else{

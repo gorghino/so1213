@@ -9,7 +9,7 @@
 
 #include "base.h"
 
-#define	MAX_CPUS 16
+#define	MAX_CPUS 4
 
 #define STOPPED 0
 #define RUNNING 1

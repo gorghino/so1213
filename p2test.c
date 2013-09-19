@@ -275,7 +275,6 @@ void test() {
 	print("p3 is started\n");
   /* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
-
 	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);		/* start p4     */
 	
 	SYSCALL(CREATEPROCESS, (int)&p5state, 10, 3); 		/* start p5     */

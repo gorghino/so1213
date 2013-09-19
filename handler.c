@@ -54,12 +54,15 @@ void tlbHandler(){
 			copyState(&new_old_areas[cpuID][2], (current_process[cpuID]->states_array[TLB_OLD]));
 		else
 			copyState(((state_t*)TLB_OLDAREA), (current_process[cpuID]->states_array[TLB_OLD]));
+
 		copyState((current_process[cpuID]->states_array[TLB_NEW]), &current_process[cpuID]->p_s);
 	}
 	else{
+		lock(semScheduler);
 		/*Else killo il processo*/
 		outChildBlocked(current_process[cpuID]);
 		current_process[cpuID] = NULL;
+		unlock(semScheduler);
 		LDST(&scheduler[cpuID]);
 	}
 	LDST(&current_process[cpuID]->p_s); 
@@ -74,9 +77,11 @@ void trapHandler(){
 		copyState((current_process[cpuID]->states_array[PGMTRAP_NEW]), &current_process[cpuID]->p_s);
 	}
 	else{
+		lock(semScheduler);
 		/*Else killo il processo*/
 		outChildBlocked(current_process[cpuID]);
 		current_process[cpuID] = NULL;
+		unlock(semScheduler);
 		LDST(&scheduler[cpuID]);
 	}
 	LDST(&current_process[cpuID]->p_s); 
@@ -129,7 +134,7 @@ void syscallHandler(){
 					This processor state should be used
 					as the initial state for the newly created process*/
 					child_state = (state_t *)current_process[cpuID]->p_s.reg_a1;
-					int newCPU = current_process[cpuID]->p_s.reg_a3 % MAX_CPUS;
+					int newCPU = (current_process[cpuID]->p_s.reg_a3 % MAX_CPUS);
 
 					/*If the new process cannot be created due to lack of resources (for example no more free ProcBlk’s),
 					 an error code of -1 is placed/returned in the caller’s v0, otherwise, 
@@ -161,7 +166,6 @@ void syscallHandler(){
 					break;
 
 				case TERMINATEPROCESS:
-					pota_debug();
 					lock(semScheduler);
 					//addokbuf("TERMINATEPROCESS\n");
 					outChildBlocked(current_process[cpuID]);
@@ -292,12 +296,14 @@ void syscallHandler(){
 
 						if(!(current_process[cpuID]->p_s.reg_a3)){
 							//Caso write
-							if(device_write_response[(current_process[cpuID]->p_s.reg_a2)] == NULL && P(&sem_terminal_read[devNumber], current_process[cpuID])){
+							if(P(&sem_terminal_read[devNumber], current_process[cpuID])){
 								current_process[cpuID] = NULL;
 								LDST(&scheduler[cpuID]);
 							}
-							else
-								current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];		
+							else{
+								current_process[cpuID]->p_s.reg_v0 = device_write_response[(current_process[cpuID]->p_s.reg_a2)];
+								device_write_response[(current_process[cpuID]->p_s.reg_a2)] = 0;
+							}
 						}					
 						else{
 							//Caso read
@@ -319,7 +325,6 @@ void syscallHandler(){
 						copyState((current_process[cpuID]->states_array[SYSBREAKPOINT_NEW]), &current_process[cpuID]->p_s);
 					}
 					else{
-						pota_debug();
 						/*Else killo il processo*/
 						outChildBlocked(current_process[cpuID]);
 						current_process[cpuID] = NULL;
