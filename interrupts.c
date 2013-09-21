@@ -28,30 +28,29 @@
 #include "scheduler.h"
 #include "main.h"
 
-extern void addokbuf(char *strp);
 extern pcb_t *current_process[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
 extern int process_count[MAX_CPUS];
 
 
 void interruptHandler(){
-	char buffer[1024];
-	int cause=getCAUSE();
-	termreg_t *DEVREG;
+  /* Puntatore a processo sbloccato */
 	pcb_t * unblocked;
-
+	
+	/* Otteniamo la causa dell'invocazione dell'interrupt
+	   e l'ID del processore sul quale girava il processore mentre veniva
+	   invocato l'interrupt */
+	int cause=getCAUSE();
 	int cpuID = getPRID();
   
 	/* Inter processor interrupts */
 	if(CAUSE_IP_GET(cause, 0)) {
 		HALT();
-	  itoa(0, buffer, 10);
 	}
 	
 	/* Processor Local Timer */
 	/*The processor Local Timer is useful for generating interrupts*/
 	else if(CAUSE_IP_GET(cause, 1)) {
-	  //itoa(1, buffer, 10);*
 		setTIMER(4000);
 		//insertProcQ(&ready_queue[cpuID], current_process[cpuID]);	
 		//current_process[cpuID] = NULL;
@@ -75,54 +74,27 @@ void interruptHandler(){
 	/* Disk Devices */
 	else if(CAUSE_IP_GET(cause, INT_DISK)) {
 		int* diskdevice=(int*)INT_BITMAP_DISKDEVICE;
-		/*itoa(*diskdevice, buffer, 10);
-		addokbuf(buffer);*/
 	}
 	
 	/* Tape Devices */
 	else if(CAUSE_IP_GET(cause, INT_TAPE)) {
 		int* tapdevice=(int*)INT_BITMAP_TAPEDEVICE;
-		/*itoa(*tapdevice, buffer, 10);
-		addokbuf(buffer);*/
 	}
 	
 	/* Network (Ethernet) Devices */
 	else if(CAUSE_IP_GET(cause, INT_UNUSED)) {
 		int* netdevice=(int*)INT_BITMAP_NETDEVICE;
-		/*itoa(*netdevice, buffer, 10);
-		addokbuf(buffer);*/
 	}
 	
 	/* Printer Devices */
 	else if(CAUSE_IP_GET(cause, INT_PRINTER)) {
 		int* printdevice=(int*)INT_BITMAP_PRINTERDEVICE;
-		/*itoa(*printdevice, buffer, 10);
-		addokbuf(buffer);*/
 	}
 	
 	/* Terminal Devices */
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)) {
 
 		int* terminaldevice=(int*)INT_BITMAP_TERMINALDEVICE;
-		//itoa(*terminaldevice, buffer, 10);
-		//addokbuf("Terminal\n");
-		//addokbuf(buffer);
-		//addokbuf("\n");
-		//itoa(CAUSE_EXCCODE_GET(cause), buffer, 10);
-		//addokbuf("Line\n");
-		//addokbuf(buffer);
-		//addokbuf("\n");
-		//itoa(CAUSE_CE_GET(cause), buffer, 10);
-		//addokbuf("Coprocessor\n");
-		//addokbuf(buffer);
-		//addokbuf("\n");
-		/*
-		DEVREG = (termreg_t *)DEV_REG(INT_TERMINAL);
-		itoa(DEVREG->recv_command, buffer, 10);
-		addokbuf(buffer);
-		DEVREG->recv_command = DEV_C_ACK;
-		itoa(DEVREG->recv_command, buffer, 10);
-		addokbuf(buffer);*/
 		
 		int devicenumber = finddevicenumber((memaddr*)INT_BITMAP_TERMINALDEVICE);
 
