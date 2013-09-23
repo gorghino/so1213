@@ -18,21 +18,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils.h"
-#include "p1test.h"
-#include "asl.e"
+#include "libumps.h"
+#include "const13.h"
 #include "const13_customized.h"
+#include "base.h"
+#include "uMPStypes.h"
+#include "types13.h"
+#include "asl.e"
+#include "utils.h"
 #include "main.h"
-
-extern pcb_t *current_process[MAX_CPUS];
-extern pcb_t *ready_queue[MAX_CPUS];
-extern int process_count[MAX_CPUS];
-extern int softBlock_count;
-
-unsigned int device_read_response[DEV_PER_INT];
-unsigned int device_write_response[DEV_PER_INT];
-
-
+#include "scheduler.h"
 
 /*insertPCBList inserisce il pcb puntato da pcb_elem nella lista puntata da pcblist_p*/
 void insertPCBList(pcb_t **pcblist_p, pcb_t *pcb_elem){
@@ -93,120 +88,74 @@ void insertSibling(pcb_t *firstchild, pcb_t *p){
 	else insertSibling(firstchild->p_sib, p);
 }
 
+/*P() verifica se il semaforo con chiave key esista; se esiste, ne decrementa il valore e se necessario, blocca il pcb process
+nella coda del semaforo.
+Se non viene inizialmente trovato un semaforo, ne viene allocato uno nuovo con chiave key*/
 int P(int *key, pcb_t *process){
+	/*Cerco il semaforo con chiave key*/
 	semd_t *semd = getSemd(key);
-	lock(semPV);
+	lock(MUTEX_PV);
 	if(semd !=NULL){
-		//if((*semd->s_key) >= 0){
-			(*semd->s_key)--;
-		//}
+		/*Il semaforo esiste ed è nella ASL*/
+		(*semd->s_key)--;
 		if((*semd->s_key) < 0){
+			/*Se il valore del semaforo è negativo, accodo il processo chiamante*/
 			insertBlocked(key, process);
-			softBlock_count++;
-			unlock(semPV);
-			return TRUE; //Mi blocco
+			plusSoftCounter();
+			unlock(MUTEX_PV);
+			return TRUE; /*Mi blocco*/
 		}
 		else{
-			unlock(semPV);
-			return FALSE; //Non mi blocco
+			unlock(MUTEX_PV);
+			return FALSE; /*Non mi blocco*/
 		}
 	}
 	else{
+		/*Il semaforo non esiste nella ASL*/
 		(*key)--;
 		if((*key) < 0){
-			insertBlocked(key, process); // Alloca il semaforo se non esiste
-			unlock(semPV);
-			softBlock_count++;
-			unlock(semPV);
-			return TRUE; //Mi blocco
+			insertBlocked(key, process); /* Alloca il semaforo se non esiste*/
+			unlock(MUTEX_PV);
+			plusSoftCounter();
+			unlock(MUTEX_PV);
+			return TRUE; /*Mi blocco*/
 		}
-		unlock(semPV);
-		return FALSE; //Non mi blocco
+		unlock(MUTEX_PV);
+		return FALSE; /*Non mi blocco*/
 	}
 }
 
+/*V() verifica se il semaforo con chiave key esista; se esiste, ne incrementa il valore e se necessario, sblocca il pcb in testa
+alla coda del semaforo.
+Se non viene inizialmente trovato un semaforo, ne incremento comunque il valore. Alla sua allocazione futura avrà quindi
+un valore diverso da quello di default*/
 pcb_t* V(int* key){	
 	semd_t *semd;
-	lock(semPV);
 	pcb_t *unblocked;
+	lock(MUTEX_PV);
+	/*Cerco il semaforo con chiave key*/
 	if((semd = getSemd(key))!=NULL){
+		/*Il semaforo esiste ed è nella ASL*/
 		(*semd->s_key)++;		
 		if((*semd->s_key) >= 0){
+			/*Sblocco il processo*/
 			unblocked = removeBlocked(key);
-			softBlock_count--;
-			unlock(semPV);
+			lessSoftCounter();
+			unlock(MUTEX_PV);
 			return unblocked;
 		}
 	}
-	else{
-		/*semd_t *semd_target = allocSem();
-		if (semd_target == NULL){
-			unlock(semPV);
-			return NULL;
-		}
-		semd_target->s_key = key;
-		insertSEMList(&semd_h, semd_target); */
+	else
+		/*Il semaforo non esiste nella ASL*/
 		(*key)++;
-	}
-	unlock(semPV);
+
+	unlock(MUTEX_PV);
 	return NULL;
 
 }
 
-#define	TERM0ADDR	0x10000250
-
-int* findAddr(int lineNumber, int deviceNumber){
-	return (int*)(TERM0ADDR + lineNumber + deviceNumber);
-}  
-
-
-
-
-//UTILS
-
-/**
- * strreverse(puntatore a char, puntatore a char): rovescia una stringa
- * \param begin inizio stringa
- * \param end fine stringa
- */
-void strreverse(char* begin, char* end) {
-       
-        char aux;
-        while(end>begin)
-                aux=*end, *end--=*begin, *begin++=aux;
-       
-}
-
-
-/**
- * itoa(valore, puntatore della stringa, base in cui convertire) : converte un intero in una stringa nella base specificata
- * \param value intero da convertire
- * \param str indirizzo dove scrivere la stringa
- * \param base base in cui convertire l'intero
- */
-void itoa(int value, char* str, int base) {
-       
-        static char num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-        char* wstr=str;
-        int sign;
-       
-        // Validate base
-        if (base<2 || base>35){ *wstr='\0'; return; }
-       
-        // Take care of sign
-        if ((sign=value) < 0) value = -value;
- 
-        // Conversion. Number is reversed.
-        do *wstr++ = num[value%base]; while(value/=base);
-        if(sign<0) *wstr++='-';
-        *wstr='\0';
-       
-        // Reverse string
-        strreverse(str,wstr-1);
-} 
-
-
-int finddevicenumber(memaddr* bitmap) {
+/*findDeviceNumber() viene utilizzato per identificare il numero del device che ha sollevato l'interrupt*/
+int findDeviceNumber(memaddr* bitmap) {
   int device_n = 0;
   
   while (*bitmap > 1) {
@@ -216,19 +165,74 @@ int finddevicenumber(memaddr* bitmap) {
   return device_n;
 }
 
-void pota_debug(){
-	return;
-}
-
-void pota_debug2(){
-	return;
-}
-
-
+/*lock() e unlock() sono utilizzate per la mutua esclusione, sfruttando la funzione CAS di uMPS*/
 void lock(int semkey){
 	while (!CAS(&semArray[semkey],1,0)) ;
 }
-
 void unlock(int semkey){
 	CAS(&semArray[semkey],0,1);
 }
+
+/*initNewOldArea() è utilizzato in fase di boot per inizializzare l'area passata come primo argomento*/
+void initNewOldArea(state_t * area, memaddr handler, int offset){
+	area->pc_epc = area->reg_t9 = handler; /*Imposto il program counter sulla funzione gestore*/
+	area->reg_sp = RAMTOP - (FRAME_SIZE * offset); /*Imposto l'indirizzo di memoria adatto*/
+	area->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc); /*Imposto i flag adatti*/
+	area->status |= STATUS_TE;
+}
+
+/*increment_priority() è utilizzato dallo scheduler per incrementare la priorità dinamica dei processi rimasti in readyQueue*/
+void increment_priority(struct pcb_t *pcb, void* pt){
+	if(pcb->priority != 19)
+		pcb->priority++;
+	return;
+}
+
+/*cpuIdle() è utilizzato dallo scheduler per impostare lo stato della CPU in stato WAIT*/
+void cpuIdle(){
+	int status = getSTATUS() | STATUS_IEc | STATUS_INT_UNMASKED;
+	setSTATUS(status);
+	while(1) WAIT();	
+}
+
+/*killMe() termina il processo chiamante sulla cpu con id cpuID e restituisce il controllo allo scheduler*/
+void killMe(int cpuID){
+	outChildBlocked(current_process[cpuID]);
+	current_process[cpuID] = NULL;
+	LDST(&scheduler[cpuID]);
+}
+
+/*isUserMode() verifica se il processo in esecuzione su cpuID è in stato USER*/
+int isUserMode(int cpuID){
+	return ((current_process[cpuID]->p_s.status << 28) >> 31);
+}
+
+/*plusSoftCounter() incrementa il softBlock in mutua esclusione*/
+void plusSoftCounter() {
+	while (!CAS(&semArray[MUTEX_SOFTBLOCK],1,0)) ;
+	softBlock_count++;
+	CAS(&semArray[MUTEX_SOFTBLOCK],0,1);
+}
+
+/*lessSoftCounter() decrementa il softBlock in mutua esclusione*/
+void lessSoftCounter() {
+	while (!CAS(&semArray[MUTEX_SOFTBLOCK],1,0)) ;
+	softBlock_count--;
+	CAS(&semArray[MUTEX_SOFTBLOCK],0,1);
+}
+
+/*checkSemaphore() verifica se p è bloccato su un semaforo di un device*/
+int checkSemaphore(pcb_t *p){
+	int j;
+	int * key = p->p_semkey;
+	for(j=0; j<DEV_PER_INT; j++)
+		if(key == &sem_disk[j] || \
+			key == &sem_tape[j] || \
+				key == &sem_ethernet[j] || \
+					key == &sem_printer[j] || \
+						key == &sem_terminal_read[j] || \
+							key == &sem_terminal_write[j])
+			return TRUE;
+	return FALSE;
+}
+

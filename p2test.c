@@ -127,7 +127,6 @@ void print(char *msg) {
 	char * s = msg;
 	devregtr * base = (devregtr *) (TERM0ADDR);
 	devregtr status;
-	//char buffer[1024];
 	
 	SYSCALL(PASSEREN, (int)&term_mut, 0, 0);				/* get term_mut lock */
 	
@@ -157,7 +156,6 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
-	
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 	print("p1 v(testsem)\n");
 
@@ -260,7 +258,6 @@ void test() {
 	print("p2 was started\n");
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
-	//print("p2 sbloccata e inserita nella readyQ\n");
   /* P1 blocks until p2 finishes and Vs endp2 */
 
 
@@ -378,7 +375,6 @@ void p3() {
 		time1 = GET_TODLOW;			/* time of day     */
 		SYSCALL(WAITCLOCK, 0, 0, 0);
 		time2 = GET_TODLOW;			/* new time of day */
-		//print("z\n");
 	}
 	
 

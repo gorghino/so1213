@@ -27,10 +27,8 @@ typedef struct pcb_t {
 	int startTime;
 
 	int numCPU;
-
-	//stati array
 	
-	state_t*			states_array[6];
+	state_t* states_array[6];
 
 } pcb_t;
 

@@ -25,147 +25,65 @@
 #include "libumps.h"
 #include "const13.h"
 #include "uMPStypes.h"
-#include "print.h"
 #include "const13_customized.h"
 #include "main.h"
 
-#define NUM_DEVICES 8
-
-pcb_t *ready_queue[MAX_CPUS];
-pcb_t *current_process[MAX_CPUS];
-// Conta quanti processi nella coda ready della CPU
-int process_count[MAX_CPUS];
-int softBlock_count;
-int stateCPU[MAX_CPUS]; 	
-
-
+/*Entry point del sistema. Main() inizializza e popola le NewOldArea della ROM e le NewOldArea delle CPU > 0
+	Inizializza le strutture dati di fase1, i semafori dei device e chiama lo scheduler*/
 int main(){
 	int i = 0;
 
-	((state_t *)INT_NEWAREA)->pc_epc = ((state_t *)INT_NEWAREA)->reg_t9 = (memaddr)interruptHandler;
-	((state_t *)INT_NEWAREA)->reg_sp = RAMTOP;
-	((state_t *)INT_NEWAREA)->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-	((state_t *)INT_NEWAREA)->status |= STATUS_TE;
-
-	((state_t *)TLB_NEWAREA)->pc_epc = ((state_t *)TLB_NEWAREA)->reg_t9 = (memaddr)tlbHandler;
-	((state_t *)TLB_NEWAREA)->reg_sp = RAMTOP;
-	((state_t *)TLB_NEWAREA)->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-	((state_t *)INT_NEWAREA)->status |= STATUS_TE;
-
-	((state_t *)PGMTRAP_NEWAREA)->pc_epc = ((state_t *)PGMTRAP_NEWAREA)->reg_t9 = (memaddr)trapHandler;
-	((state_t *)PGMTRAP_NEWAREA)->reg_sp = RAMTOP;
-	((state_t *)PGMTRAP_NEWAREA)->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-	((state_t *)INT_NEWAREA)->status |= STATUS_TE;
-
-	((state_t *)SYSBK_NEWAREA)->pc_epc = ((state_t *)SYSBK_NEWAREA)->reg_t9 = (memaddr)syscallHandler;
-	((state_t *)SYSBK_NEWAREA)->reg_sp = RAMTOP;
-	((state_t *)SYSBK_NEWAREA)->status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-	((state_t *)INT_NEWAREA)->status |= STATUS_TE;
-
-
-    //addokbuf("Popolo le aree\n");
-    /*Populate the four New Areas in the ROM Reserved Frame. (See Section
-		3.2.2-pops.) For each New processor state*/ 
-    for (i=0; i<MAX_CPUS;i++){
-
-	    /*Set the PC to the address of your nucleus function that is to handle
-			exceptions of that type.*/
-	    new_old_areas[i][1].pc_epc = new_old_areas[i][1].reg_t9 = (memaddr)interruptHandler;
-	    new_old_areas[i][1].status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-		new_old_areas[i][1].status |= STATUS_TE;
-
-	    new_old_areas[i][3].pc_epc = new_old_areas[i][3].reg_t9 = (memaddr)tlbHandler;
-	    new_old_areas[i][3].status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-		new_old_areas[i][3].status |= STATUS_TE;
-
-	    new_old_areas[i][5].pc_epc = new_old_areas[i][5].reg_t9 = (memaddr)trapHandler;
-	    new_old_areas[i][5].status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-		new_old_areas[i][5].status |= STATUS_TE;
-
-	    new_old_areas[i][7].pc_epc = new_old_areas[i][7].reg_t9 = (memaddr)syscallHandler;
-	    new_old_areas[i][7].status &= ~(STATUS_IEc|STATUS_KUc|STATUS_VMc);
-		new_old_areas[i][7].status |= STATUS_TE;
-
-		if(i == 0){
-			new_old_areas[i][1].reg_sp = RAMTOP;
-			new_old_areas[i][3].reg_sp = RAMTOP;	
-			new_old_areas[i][5].reg_sp = RAMTOP;	
-			new_old_areas[i][7].reg_sp = RAMTOP;
-		}
-		else{
-			new_old_areas[i][1].reg_sp = RAMTOP - (FRAME_SIZE * i);
-			new_old_areas[i][3].reg_sp = RAMTOP - (FRAME_SIZE * i);	
-			new_old_areas[i][5].reg_sp = RAMTOP - (FRAME_SIZE * i);
-			new_old_areas[i][7].reg_sp = RAMTOP - (FRAME_SIZE * i);
-		}
+	/*Init NewOldArea della ROM*/
+	initNewOldArea((state_t *)INT_NEWAREA, (memaddr) interruptHandler, 0);
+	initNewOldArea((state_t *)TLB_NEWAREA, (memaddr)tlbHandler, 0);
+	initNewOldArea((state_t *)PGMTRAP_NEWAREA, (memaddr) trapHandler, 0);
+	initNewOldArea((state_t *)SYSBK_NEWAREA, (memaddr) syscallHandler, 0);
+	
+	/*Init NewOldArea delle CPU > 0.*/
+    for (i=1; i<GET_NCPU;i++){
+    	initNewOldArea(&new_old_areas[i][INT_NEWAREA_INDEX], (memaddr) interruptHandler, i);
+    	initNewOldArea(&new_old_areas[i][TLB_NEWAREA_INDEX], (memaddr) tlbHandler, i);
+    	initNewOldArea(&new_old_areas[i][PGMTRAP_NEWAREA_INDEX], (memaddr) trapHandler, i);
+    	initNewOldArea(&new_old_areas[i][SYSBK_NEWAREA_INDEX], (memaddr) syscallHandler, i);
     }
 
-
-    /*Initialize the Level 2 (phase 1 - see Chapter 2) data structures:*/
-    //addokbuf("Inizializzo liste fase1\n");
+    /*Inizializzo le strutture dati di fase1*/
     initPcbs();
     initASL();
 
-
-    /*Initialize all nucleus maintained variables: Process Count, Soft-block Count,
-		Ready Queue, and Current Process.*/
-	//addokbuf("Inizializzo strutture dati\n");
-
-	for (i=0; i<MAX_CPUS;i++){
-    	ready_queue[i] = NULL; /*Puntatore alla testa della ready Queue*/
-    	process_count[i] = 0;  
-    		
+    /*Inizializzo tutte le variabili del nucleo: Process Count, Soft-block Count, Ready Queues, and Current Process.*/
+	for (i=0; i<GET_NCPU; i++){
+		process_count[i] = 0; /*Counter processi attivi*/  	
+    	ready_queue[i] = NULL; /*Coda dei processi in stato ready*/
+    	current_process[i] = NULL; /*Puntatore al processo in esecuzione*/
     }
-    pseudo_clock = 0; 
+    softBlock_count = 0; /*Contatore processi in stato wait*/
 
-    /*Initialize all nucleus maintained semaphores. 
-    	In addition to the above nucleus variables, there is one semaphore variable for each external (sub)device
-		in μMPS2, plus a semaphore to represent a pseudo-clock timer. Since terminal devices are 
-		actually two independent sub-devices (see Section 5.7pops), the nucleus maintains 
-		two semaphores for each terminal device. All of these semaphores need to be initialized to zero.*/
-
-	//addokbuf("Inizializzo semafori\n");
-
-	int j = 0;
-	for(j=0;j<NUM_DEVICES;j++){
-		sem_disk[j] = 0;
-		sem_tape[j] = 0;
-		sem_ethernet[j] = 0;
-		sem_printer[j] = 0;
-		sem_terminal_read[j] = 0;
-		sem_terminal_write[j] = 0;
+    /*Inizializzo i semafori mantenuti dal nucleo
+    	Vengono impostati a 0 i semafori dei device (uno per device), due per ogni terminal (scrittura/lettura) e
+    	il semaforo dello pseudoClock.*/
+	for(i=0;i<DEV_PER_INT;i++){
+		sem_disk[i] = 0;
+		sem_tape[i] = 0;
+		sem_ethernet[i] = 0;
+		sem_printer[i] = 0;
+		sem_terminal_read[i] = 0;
+		sem_terminal_write[i] = 0;
 	}
+	pseudo_clock = 0; 
 
-	//semArray[0] = semPV
-	//semArray[1] = semClock
-	//semArray[2] = semScheduler
-	for(j=0;j<3;j++)
-		semArray[j] = 1;
+	/*Inizializzo i semafori delle CAS:
+		0-MAX_CPUS: Scheduler
+		MAX_CPUS+1: PV
+		MAX_CPUS+2: PseudoClock*/
 
+	for (i=0;i<NUM_SEM_CUSTOM; i++)
+		semArray[i] = 1;
 
-	/*Instantiate a single process and place its ProcBlk in the Ready Queue. A
-		process is instantiated by allocating a ProcBlk (i.e. allocPcb()), and
-		initializing the processor state that is part of the ProcBlk. In particular this
-		process needs to have interrupts enabled, virtual memory off, the processor
-		Local Timer enabled, kernel-mode on, $SP set to RAMTOP-FRAMESIZE
-		(i.e. use the penultimate RAM frame for its stack), and its PC set to the
-		address of test. Test is a supplied function/process that will help you
-		debug your nucleus. One can assign a variable (i.e. the PC) the address of
-		a function by using
-		. . . = (memaddr)test
-		where memaddr, in TYPES. H has been aliased to unsigned int.
-		Remember to declare the test function as “external” in your program by
-		including the line:
-		extern void test();
-		For rather technical reasons that are somewhat explained in Section 8.2-
-		pops, whenever one assigns a value to the PC one must also assign the
-		same value to the general purpose register t9. (a.k.a. s t9 as defined in
-		TYPES. H .) Hence this will be done when initializing the four New Areas as
-		well as the processor state that defines this single process.*/
-
-
-	/*Call the scheduler*/
+	/*Inizializzo lo scheduler*/
 	init();
-	return -1;
 
+	/*Error: Non uscirò mai dallo scheduler*/
+	PANIC();
+	return -1;
 }

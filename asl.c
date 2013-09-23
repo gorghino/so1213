@@ -30,11 +30,6 @@ semd_t semd_table[MAXPROC]; /*Tabella dei semafori*/
 semd_t *semdFree_h; /*Puntatore alla testa della lista dei semafori liberi*/
 semd_t *semd_h; /*Puntatore alla testa della lista dei semafori attivi (ASL)*/
 
-#define TRUE 1
-#define FALSE 0
-
-char buffer[1024];
-
 extern int softBlock_count;
 extern int process_count[MAX_CPUS];
 extern pcb_t *ready_queue[MAX_CPUS];
@@ -60,13 +55,11 @@ void initASL_rec(int count){
 
 /*Cerca nella ASL il semaforo con chiave key e restituisce un puntatore ad esso*/
 semd_t* getSemd(int *key){
-	//addokbuf("Cerco semaforo\n");
 	return getSemd_rec(&semd_h, key);
 }
 
 semd_t* getSemd_rec(semd_t **semd_h, int* key){
 	if(*semd_h == NULL){
-		//addokbuf("Semaforo non e' nella ASL\n");
 		return NULL; /*Il semaforo non esiste nella ASL*/
 	}
 
@@ -87,7 +80,6 @@ int insertBlocked(int *key, pcb_t* p){
 		semd_t *semd_target = getSemd(key);
 		if(semd_target == NULL){
 			/*Il semaforo non esiste nella ASL*/
-
 			semd_target = allocSem(); /*semd_target ora punta al SEMD tolto dalla semdFree. Se semdFree è vuota, semd_target == NULL*/
 			if (semd_target == NULL) /*Se la semdFree è vuota restituisco TRUE*/
 				return TRUE;
@@ -97,7 +89,7 @@ int insertBlocked(int *key, pcb_t* p){
 			if(*key <= 0)
 				insertProcQ(&(semd_target->s_procQ), p); /*Inserisco p nella coda di processi bloccati di semd_target*/
 			return FALSE;
-			}
+		}
 		else{
 			/*Il semaforo esiste già nella ASL*/
 			insertProcQ(&(semd_target->s_procQ), p);
@@ -180,21 +172,28 @@ pcb_t* outBlocked(pcb_t *p){
 outChildBlocked() termina anche tutti i processi discendenti di p.
 L'eliminazione avviene visitando l'albero come una DFS*/
 void outChildBlocked(pcb_t *p){
-			if(outBlocked(p)){
-				/*Rimuovo p dalla coda dei processi del suo semaforo*/
-				softBlock_count--;
-				//if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
-					semd_t* semd = getSemd(p->p_semkey);
-					(*semd->s_key)++;
-				//}
-			}
-			outChild(p);
-			if(p->p_first_child)
-				terminatePcb(p->p_first_child); //Elimina la progenie di p
-			freePcb(p);
+	semd_t* semd;
+	if(outBlocked(p)){
+		/*Rimuovo p dalla coda dei processi del suo semaforo*/
+		lessSoftCounter(); /*Decremento il softBlock counter*/
+		semd = getSemd(p->p_semkey);
+		/*Se p è bloccato su un semaforo di un device, non incremento il value. Sarà l'interrupt a farlo*/
+		if(!checkSemaphore(p))
+			(*semd->s_key)++;	
+	}
+	outChild(p);
+	/*Se p ha una progenie, terminatePcb si occupa di terminarla*/
+	if(p->p_first_child)
+		terminatePcb(p->p_first_child); /*Elimina la progenie di p*/
+
+	lock(MUTEX_SCHEDULER);
+	freePcb(p); /*Resetto i campi del pcb puntato da p che viene reinserito nella lista pcbFree*/
+	unlock(MUTEX_SCHEDULER);
 }
 
+/*TerminatePcb si preoccupa di terminare ricorsivamente tutta la progenie di p, root dell'albero di processi*/
 void terminatePcb(pcb_t *p){
+	semd_t* semd;
 	if(p->p_first_child != NULL)
 		terminatePcb(p->p_first_child);
 
@@ -202,21 +201,22 @@ void terminatePcb(pcb_t *p){
 		terminatePcb(p->p_sib);	
 	
 	if(p->p_first_child == NULL && p->p_sib == NULL){
+		lock(MUTEX_SCHEDULER);
 		if(outBlocked(p)){
 			/*Rimuovo p dalla coda dei processi del suo semaforo*/
-			softBlock_count--;
-			//if(p->p_semkey != &sem_terminal_read[0]){ // DA CONTROLLARE <---------------------------------------
-				semd_t* semd = getSemd(p->p_semkey);
-				(*semd->s_key)++;
-			//}
+			lessSoftCounter(); /*Decremento il softBlock counter*/
+			semd = getSemd(p->p_semkey);
+			/*Se p è bloccato su un semaforo di un device, non incremento il value. Sarà l'interrupt a farlo*/
+			if(!checkSemaphore(p))
+				(*semd->s_key)++;	
 		}
+		/*Tolgo p dalla ReadyQueue, se presente*/
 		outProcQ(&ready_queue[getPRID()], p);
 		outChild(p);
 		freePcb(p);
+		unlock(MUTEX_SCHEDULER);
 	} 
 }
-
-
 
 /*Richiama la funzione fun per ogni elemento della coda di processi del semaforo della ASL con chiave key*/
 void forallBlocked(int *key, void fun(struct pcb_t *pcb, void *), void *arg){

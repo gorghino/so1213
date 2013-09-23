@@ -107,7 +107,7 @@ void insertProcQ(pcb_t **head, pcb_t* p){
 	if ((*head) == NULL){
 		(*head) = p; /*la coda è vuota, p è il primo elemento*/
 		}
-	else if(p->priority < (*head)->priority && head != NULL ){	
+	else if(p->priority < (*head)->priority && head != NULL ){
 			insertProcQ(&((*head)->p_next), p);
 			}
 	else if(p->priority > (*head)->priority && head != NULL){
@@ -136,10 +136,7 @@ pcb_t *getLast(pcb_t **head, int priority){
 /*Restituisce l’elemento di testa della coda dei processi puntata da head, SENZA RIMUOVERLO. 
 Ritorna NULL se la coda non ha elementi.*/
 pcb_t* headProcQ(pcb_t* head){
-	if (!head)
-		return NULL;
-	else
-		return head;
+	return head;
 }
 
 
