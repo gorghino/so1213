@@ -192,6 +192,7 @@ void increment_priority(struct pcb_t *pcb, void* pt){
 void cpuIdle(){
 	int status = getSTATUS() | STATUS_IEc | STATUS_INT_UNMASKED;
 	setSTATUS(status);
+	setTIMER(SCHED_TIME_SLICE);
 	while(1) WAIT();	
 }
 

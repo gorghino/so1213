@@ -33,11 +33,9 @@
 
 #include "const13.h"
 #include "types13.h"
-#include "utils.h"
+
 #include "libumps.h"
- 
-extern void addokbuf(char *strp);
-extern void pota_debug();
+
 typedef unsigned int devregtr;
 
 typedef U32 cpu_t;
@@ -134,18 +132,16 @@ void print(char *msg) {
 	  /* Put "transmit char" command+char in term0 register (3rd word). This 
 		   actually starts the operation on the device! */
 		*(base + 3) = PRINTCHR | (((devregtr) *s) << BYTELEN);
-	
+		
 		/* Wait for I/O completion (SYS8) */
 		status = SYSCALL(WAITIO, INT_TERMINAL, 0, FALSE);
-	
 
 /*		PANIC(); */
-		if ((status & TERMSTATMASK) != TRANSM){
-			PANIC();
-		}
 		
-		s++;
+		if ((status & TERMSTATMASK) != TRANSM)
+			PANIC();
 
+		s++;	
 	}
 	
 	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* release term_mut */
@@ -155,8 +151,10 @@ void print(char *msg) {
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
-void test() {
+void test() {	
+
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+
 	print("p1 v(testsem)\n");
 
 	/* set up states of the other processes */
@@ -252,38 +250,41 @@ void test() {
 	gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf;
 	gchild4state.status = gchild4state.status | STATUS_IEp | STATUS_INT_UNMASKED;
 	
-
+	
 	/* create process p2 */
 	SYSCALL(CREATEPROCESS, (int)&p2state, 19, 1);				/* start p2     */
+
 	print("p2 was started\n");
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
+
   /* P1 blocks until p2 finishes and Vs endp2 */
-
-
 	SYSCALL(PASSEREN, (int)&endp2, 0, 0);					/* P(endp2)     */
 
 	/* make sure we really blocked */
 	if (p1p2synch == 0)
 		print("error: p1/p2 synchronization bad\n");
-	
+
 	SYSCALL(CREATEPROCESS, (int)&p3state, 10, 1);				/* start p3  */
 
 	print("p3 is started\n");
+
   /* P1 blocks until p3 ends */
 	SYSCALL(PASSEREN, (int)&endp3, 0, 0);					/* P(endp3)     */
+
+
 	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);		/* start p4     */
-	
+
 	SYSCALL(CREATEPROCESS, (int)&p5state, 10, 3); 		/* start p5     */
 
 	SYSCALL(CREATEPROCESS, (int)&p6state, 10, 4);		/* start p6		*/
 
 	SYSCALL(CREATEPROCESS, (int)&p7state, 10, 5);		/* start p7		*/
 
-
 	SYSCALL(PASSEREN, (int)&endp5, 0, 0);				  	/* P(endp5)		*/ 
 
 	print("p1 knows p5 ended\n");
+
 	SYSCALL(PASSEREN, (int)&blkp4, 0, 0);					/* P(blkp4)		*/
 
 	/* now for a more rigorous check of process termination */
@@ -294,6 +295,7 @@ void test() {
 			print("error in process termination\n");
 			PANIC();
 		}
+
 		SYSCALL(PASSEREN, (int)&endp8, 0, 0);
 	}
 
@@ -314,6 +316,7 @@ void p2() {
 
   /* startp2 is initialized to 0. p1 Vs it then waits for p2 termination */
 	SYSCALL(PASSEREN, (int)&startp2, 0, 0);				/* P(startp2)   */
+
 	print("p2 starts\n");
 
 	/* initialize all semaphores in the s[] array */
@@ -332,6 +335,7 @@ void p2() {
 
 	now1 = GET_TODLOW;                  				/* time of day   */
 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
+
 	/* delay for several milliseconds */
 	for (i = 1; i < LOOPNUM; i++)
 		;
@@ -352,8 +356,8 @@ void p2() {
 
 	p1p2synch = 1;				/* p1 will check this */
 
-
 	SYSCALL(VERHOGEN, (int)&endp2, 0, 0);				/* V(endp2)     */
+
 	SYSCALL(TERMINATEPROCESS, 0, 0, 0);			/* terminate p2 */
 
 	/* just did a SYS2, so should not get to this point */
@@ -370,13 +374,13 @@ void p3() {
 
 	time1 = 0;
 	time2 = 0;
+
 	/* loop until we are delayed at least half of clock V interval */
 	while ((time2 - time1) < (CLOCKINTERVAL >> 1) )  {
 		time1 = GET_TODLOW;			/* time of day     */
 		SYSCALL(WAITCLOCK, 0, 0, 0);
 		time2 = GET_TODLOW;			/* new time of day */
 	}
-	
 
 	print("p3 - WAITCLOCK OK\n");
 
@@ -384,10 +388,9 @@ void p3() {
 	   time correctly */
 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);
 
-	for (i = 0; i < CLOCKLOOP; i++){
-		SYSCALL(WAITCLOCK, 0, 0, 0);	
-	}
-
+	for (i = 0; i < CLOCKLOOP; i++)
+		SYSCALL(WAITCLOCK, 0, 0, 0);
+	
 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);
 
 	if ((cpu_t2 - cpu_t1) < (MINCLOCKLOOP / (* ((cpu_t *) BUS_TIMESCALE))))
@@ -430,10 +433,9 @@ void p4() {
 
 	p4state.reg_sp -= QPAGE;		/* give another page  */
 
-	print("new p4 starts\n");
 	SYSCALL(CREATEPROCESS, (int)&p4state, 10, 2);			/* start a new p4    */
 
-  	SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* wait for it       */
+  SYSCALL(PASSEREN, (int)&synp4, 0, 0);				/* wait for it       */
   
 	print("p4 is OK\n");
 
@@ -494,9 +496,7 @@ void p5mm() {
 /* void p5sys(unsigned int cause) { */
 void p5sys() {
 	unsigned int p5status = sstat_o.status;
-
 	p5status = (p5status << 28) >> 31; 
-
 	switch(p5status) {
 	case ON:
 		print("High level SYS call from user mode process\n");
@@ -513,6 +513,7 @@ void p5sys() {
 /* p5 -- SYS5 test process */
 void p5() {
 	print("p5 starts\n");
+
 	/* set up higher level TRAP handlers (new areas) */
 	STST(&pstat_n);  /* pgmtrap new area */
 	pstat_n.pc_epc = pstat_n.reg_t9 = (memaddr)p5prog; /* pgmtrap exceptions */
@@ -536,12 +537,11 @@ void p5() {
 
 	SYSCALL(SPECTRAPVEC, SYS5_SYSBK, (int)&sstat_o, (int)&sstat_n);
 	
-	/* to cause a pgm trap access some non-existent memory */
+	/* to cause a pgm trap access some non-existent memory */	
 	*p5MemLocation = *p5MemLocation + 1;		 /* Should cause a program trap */
 }
 
 void p5a() {
-
 	unsigned int p5Status;
 	
 	/* generate a TLB exception by turning on VM without setting up the 
@@ -556,7 +556,6 @@ void p5b() {
 	cpu_t		time1, time2;
 
 	SYSCALL(9, 0, 0, 0);
-
 	/* the first time through, we are in user mode */
 	/* and the P should generate a program trap */
 	SYSCALL(PASSEREN, (int)&endp4, 0, 0);			/* P(endp4)*/
@@ -565,15 +564,13 @@ void p5b() {
 	time1 = 0;
 	time2 = 0;
 	while (time2 - time1 < (CLOCKINTERVAL >> 1))  {
-
 		time1 = GET_TODLOW;
 		SYSCALL(WAITCLOCK, 0, 0, 0);
 		time2 = GET_TODLOW;
 	}
 
-
 	/* if p4 and offspring are really dead, this will increment blkp4 */
-	
+
 	SYSCALL(VERHOGEN, (int)&blkp4, 0, 0);			/* V(blkp4) */
 
 	SYSCALL(VERHOGEN, (int)&endp5, 0, 0);			/* V(endp5) */
@@ -627,7 +624,6 @@ void p8root() {
 	for (grandchild=0; grandchild < NOLEAVES; grandchild++) {
 		SYSCALL(PASSEREN, (int)&endcreate, 0, 0);
 	}
-
 	
 	SYSCALL(VERHOGEN, (int)&endp8, 0, 0);
 
